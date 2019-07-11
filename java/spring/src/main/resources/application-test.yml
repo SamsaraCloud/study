@@ -1,0 +1,44 @@
+spring:
+    datasource:
+        name: dzj
+        url: jdbc:mysql://47.107.172.70:3306/java?useUnicode=true&amp;characterEncoding=UTF-8&allowMultiQueries=true&zeroDateTimeBehavior=convertToNull&useSSL=false&rewriteBatchedStatements=true
+        username: root
+        password: 123456
+        # \u4F7F\u7528druid\u6570\u636E\u6E90
+        driver-class-name: com.mysql.jdbc.Driver
+        platform: mysql
+        type: com.alibaba.druid.pool.DruidDataSource
+        filters: stat
+        maxActive: 100
+        initialSize: 1
+        maxWait: 60000
+        spring.datasorce.minIdle: 1
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        poolPreparedStatements: true
+        maxOpenPreparedStatements: 100
+        ###########页面配置前缀
+    #mvc:
+      #view:
+        #prefix: /WEB-INF/jsp/
+        ###########后缀
+        #suffix: .jsp
+    aop:
+      #auto: true
+      proxy-target-class: true
+    #####配置序列化时,不返回null值到前端
+#    jackson:
+#      default-property-inclusion: ALWAYS
+    redis:
+        host: 47.107.172.70
+#pagehelper\u5206\u9875\u63D2\u4EF6
+#pagehelper:
+#    helperDialect: mysql
+#    reasonable: true
+#    supportMethodsArguments: true
+#    params: count=countSql
+
+
