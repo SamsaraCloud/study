@@ -1,14 +1,16 @@
 package com.yangyun.collections;
 
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class HashMapDemo {
 
     public static void main(String[] args) {
+
         Map<String, String> map = new HashMap<>();
 
-        map.put("a", "a");
+        map.put("a", "试试是");
         map.put("b", "a");
         map.put("c", "a");
         map.put("d", "a");
@@ -20,5 +22,8 @@ public class HashMapDemo {
         map.put("j", "a");
         map.put("k", "a");
         map.put("l", "a");
+        System.out.println(map);
     }
+
+
 }
