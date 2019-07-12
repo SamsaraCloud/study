@@ -10,7 +10,7 @@ public class HashMapDemo {
 
         Map<String, String> map = new HashMap<>();
 
-        map.put("a", "试试是");
+        map.put("a", "a");
         map.put("b", "a");
         map.put("c", "a");
         map.put("d", "a");
@@ -22,6 +22,8 @@ public class HashMapDemo {
         map.put("j", "a");
         map.put("k", "a");
         map.put("l", "a");
+        map.put("m", "a");
+        String put = map.put("m", "a");
         System.out.println(map);
     }
 
