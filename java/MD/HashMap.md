@@ -11,7 +11,7 @@ hashmap 基于 数组 + 链表; 当元素个数超过阀值, 会由链表转为 
 private static final String STR = "Lq9BH,MR8aH,MQXAg,MQXBH,MR9Ag,N1wAg,N1wBH,N2WaH,LpXBH,N38aH,N39BH,N39Ag,N2XBH,LowAg,LpXAg,LpWaH,LowBH,Lq9Ag,MPwAg,MPvaH,MPwBH";
 ```
 
-**put()**
+**put()******
 
 ```java
 	static final int hash(Object key) {
@@ -237,6 +237,100 @@ private static final String STR = "Lq9BH,MR8aH,MQXAg,MQXBH,MR9Ag,N1wAg,N1wBH,N2W
             }
         }
         return newTab;
+    }
+```
+
+**get() 方法**
+
+```java
+	public V get(Object key) {
+        Node<K,V> e;
+        return (e = getNode(hash(key), key)) == null ? null : e.value;
+    }
+	// 判断 key 所在的槽位是单个 node, 链表 node, TreeNode, 然后再获取对应元素
+	final Node<K,V> getNode(int hash, Object key) {
+        Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+      	// 根据 hash 值直接查找是否有该元素, 没有返回 null
+        if ((tab = table) != null && (n = tab.length) > 0 &&
+            (first = tab[(n - 1) & hash]) != null) {
+          	// always check first node, 永远为链表的第一个元素
+          	// key != null &&key.equals(k) 说明 table 中该元素不为链表或树的第一个元素
+            if (first.hash == hash && ((k = first.key) == key || (key != null &&key.equals(k))))
+                return first;
+          	//当前元素为链表或树中大于一位的元素
+            if ((e = first.next) != null) {
+              	// 当为树时
+                if (first instanceof TreeNode)
+                    return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+              	// 当为链表时
+                do {
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        return e;
+                } while ((e = e.next) != null);
+            }
+        }
+        return null;
+    }
+```
+
+**remove() 方法**
+
+```java
+public V remove(Object key) {
+        Node<K,V> e;
+        return (e = removeNode(hash(key), key, null, false, true)) == null ?
+            null : e.value;
+    }
+final Node<K,V> removeNode(int hash, Object key, Object value,
+                               boolean matchValue, boolean movable) {
+        Node<K,V>[] tab; Node<K,V> p; int n, index;
+  		// 前面这部分代码和 get() 方法一致, 首先先要判断元素是否存在, 然后获取对应元素
+        if ((tab = table) != null && (n = tab.length) > 0 &&
+            (p = tab[index = (n - 1) & hash]) != null) {
+            Node<K,V> node = null, e; K k; V v;
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+                node = p;
+            else if ((e = p.next) != null) {
+                if (p instanceof TreeNode)
+                    node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
+                else {
+                    do {
+                        if (e.hash == hash &&
+                            ((k = e.key) == key ||
+                             (key != null && key.equals(k)))) {
+                          	// node 当前元素
+                            node = e;
+                            break;
+                        }
+                      	// p 为移除元素的上一个元素, 
+                      	// get()时 always check first node, 永远为链表的第一个元素. 的由来
+                        p = e;
+                      // e = e.next 获取到了当前元素
+                    } while ((e = e.next) != null);
+                }
+            }
+          	
+            if (node != null && (!matchValue || (v = node.value) == value ||
+                                 (value != null && value.equals(v)))) {
+              	// 下面三个 if 判断元素类型
+                if (node instanceof TreeNode)
+                  	// 移除树中的元素, 根据hash 和 equals 方法
+                    ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
+                else if (node == p)
+                  	// 当为 table 数组元素, node 的 next 节点是没有元素的;
+                    tab[index] = node.next;
+                else
+                  	// 当为链表结构. 使用移除元素的下一个元素替换当前元素, 做为当前元素的上一个元素的下个元素, 当前元素被移除
+                    p.next = node.next;
+                ++modCount;
+                --size;
+                afterNodeRemoval(node);
+                return node;
+            }
+        }
+        return null;
     }
 ```
 
