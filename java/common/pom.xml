@@ -9,16 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>spring</artifactId>
-
-    <dependencies>
-        <dependency>
-            <artifactId>java</artifactId>
-            <groupId>com.yangyun</groupId>
-            <version>1.0.0</version>
-        </dependency>
-
-    </dependencies>
+    <artifactId>common</artifactId>
 
 
 </project>

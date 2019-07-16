@@ -1,31 +1,29 @@
 package com.yangyun.collections;
 
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HashMapDemo {
 
+    private static final String STR = "Lq9BH,MR8aH,MQXAg,MQXBH,MR9Ag,N1wAg,N1wBH,N2WaH,LpXBH,N38aH,N39BH,N39Ag,N2XBH,LowAg,LpXAg,LpWaH,LowBH,Lq9Ag,MPwAg,MPvaH,MPwBH";
+
     public static void main(String[] args) {
-
         Map<String, String> map = new HashMap<>();
-
+//        String[] split = STR.split(",");
+//        for (int i = 0; i < split.length; i++){
+//            map.put(split[i], split[i]);
+//        }
         map.put("a", "a");
-        map.put("b", "a");
-        map.put("c", "a");
-        map.put("d", "a");
-        map.put("e", "a");
-        map.put("f", "a");
-        map.put("g", "a");
-        map.put("h", "a");
-        map.put("i", "a");
-        map.put("j", "a");
-        map.put("k", "a");
-        map.put("l", "a");
-        map.put("m", "a");
-        String put = map.put("m", "a");
-        System.out.println(map);
+
+        String a = map.remove("a");
+        System.out.println(a);
+
+
     }
-
-
 }
