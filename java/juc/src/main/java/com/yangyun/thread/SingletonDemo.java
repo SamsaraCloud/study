@@ -12,7 +12,7 @@ public class SingletonDemo {
     }
 
     public static SingletonDemo getInstance (){
-        // DCL Double Check Lock
+        // DCL Double Check Lock 双端检索机制
         if (instance == null){
             synchronized (SingletonDemo.class) {
                 if (instance == null){
@@ -27,7 +27,7 @@ public class SingletonDemo {
         for (int i = 0; i < Integer.MAX_VALUE; i++) {
             new Thread(() -> {
                 SingletonDemo.getInstance();
-            }).start();
+            }, String.valueOf(i)).start();
         }
     }
 
