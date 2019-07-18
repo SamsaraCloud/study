@@ -367,7 +367,72 @@ Callable 有返回结果, 会抛异常;  针对并发, 异步的情况而出现;
 
 ③ 提高线程的统一管理. 线程是稀缺资源, 如果无限制创建, 不仅会消耗系统资源, 还会降低系统的稳定性, 使用线程池可以进行统一分配,调优和监控
 
+**线程池七大参数**
 
+```java
+	public static ExecutorService newFixedThreadPool(int nThreads) {
+        return new ThreadPoolExecutor(nThreads, nThreads,
+                                      0L, TimeUnit.MILLISECONDS,
+                                      new LinkedBlockingQueue<Runnable>());
+    }
+	// 几大线程池底层实现原理都是基于该对象: ThreadPoolExecutor
+	public ThreadPoolExecutor(int corePoolSize,
+                              int maximumPoolSize,
+                              long keepAliveTime,
+                              TimeUnit unit,
+                              BlockingQueue<Runnable> workQueue) {
+        this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
+             Executors.defaultThreadFactory(), defaultHandler);
+    }
+    int maximumPoolSize,
+	线程池允许的最大线程数 maximumPoolSize >= corePoolSize; 当阻塞队列已满, 外部还有任务提交, 此时线程池的线程数会进行扩容,直到达到最大线程数, 然后队列也满, 会采取拒绝策略了
+    long keepAliveTime,
+	空闲线程的存活时间, 空闲线程 = maximumPoolSize - corePoolSize; 当时间到达, 空闲线程将被销毁, 直到线程池中的线程数为 corePoolSize; 默认情况下只有当:  线程池线程数 > corePoolSize 时才有效
+    TimeUnit unit,
+    空闲线程存活时间的单位
+    BlockingQueue<Runnable> workQueue,
+	阻塞队列, 用于保存已经提交但是没有执行的任务; 需要等待核心线程数有空闲
+    ThreadFactory threadFactory,
+	线程池中用于生产线程的线程工厂
+    RejectedExecutionHandler handler
+    当线程数达到 maximumPoolSize, 并且缓存队列也已满, 外部还有任务提交时, 将启动拒绝策略
+    jvm 提供四种拒绝策略:
+	
+```
 
+**核心参数**
 
+int corePoolSize :
+
+核心线程数, 线程池中基本线程数; 随着线程池的创建而创建; 当线程数达到核心线程数之后, 再有任务进来, 将被放入缓存队列中等待
+
+int maximumPoolSize: 
+
+线程池允许的最大线程数 maximumPoolSize >= corePoolSize; 当阻塞队列已满, 外部还有任务提交, 此时线程池的线程数会进行扩容,直到达到最大线程数, 然后队列也满, 会采取拒绝策略了
+
+long keepAliveTime: 
+
+空闲线程的存活时间, 空闲线程 = maximumPoolSize - corePoolSize; 当时间到达, 空闲线程将被销毁, 直到线程池中的线程数为 corePoolSize; 默认情况下只有当:  线程池线程数 > corePoolSize 时才有效
+
+TimeUnit unit: 空闲线程存活时间的单位
+
+BlockingQueue<Runnable> workQueue: 
+
+阻塞队列, 用于保存已经提交但是没有执行的任务; 需要等待核心线程数有空闲
+
+ThreadFactory threadFactory: 线程池中用于生产线程的线程工厂
+
+RejectedExecutionHandler handler: 
+
+当线程数达到 maximumPoolSize, 并且缓存队列也已满, 外部还有任务提交时, 将启动拒绝策略
+
+**jvm 提供四种拒绝策略:**
+
+AbortPolicy(默认): 直接抛出异常 RejectedExecutionException 阻止系统正常运行 
+
+CallerRunsPolicy:  不会抛异常, 也不会丢弃任务, 而是将某些任务回退给调用者
+
+DiscardOldestPolicy:  抛弃队列中等待最久的任务, 然后把当前任务加入到队列中尝试再次提交当前任务
+
+DiscardPolicy: 直接丢弃任务, 不做任何处理不抛异常. 在允许丢弃任务的情况下, 是最好的一种方案
 
