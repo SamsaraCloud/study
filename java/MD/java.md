@@ -14,7 +14,7 @@
 
 ​	计算机在执行程序时, 为了提高性能, 编译器和处理器常常会**对指令做重排**, 分为三种情况
 
-![/image/1.PNG](image/1.PNG)
+![image/1.PNG](/image/1.PNG)
 
 ​	单线程环境里面确保程序最终执行结果和代码顺序执行的结果一致;
 
@@ -331,7 +331,7 @@ BlockQueue: 不需要关心线程的阻塞和唤醒
 
 
 
-![image/2.PNG](image/2.PNG)
+![image/2.PNG](/image/2.PNG)
 
 线程1 往队列中存元素, 线程2 从队列中取元素;
 
@@ -339,9 +339,9 @@ BlockQueue: 不需要关心线程的阻塞和唤醒
 
 当队列中没有元素时, 线程2 **获取**元素将被阻塞直到队列中有新元素
 
-![image/3.PNG](image/3.PNG)
+![image/3.PNG](/image/3.PNG)
 
-![image/4.PNG](image/4.PNG)
+![image/4.PNG](/image/4.PNG)
 
 ##### 线程池
 

@@ -22,7 +22,7 @@ hashmap 基于 数组 + 链表; 当元素个数超过阀值, 会由链表转为 
 
 HashMap 底层实现为 Entry<K, V> 数组 + Node 链表 + TreeNode 红黑树, 在执行Put 方法时, 先计算 K 的Hash 值, 找到对应数组所在的下标保存, 因为存取的元素会有 hash 相同的情况, 这个种情况叫做**碰撞**, **碰撞**发生时, 会再比较 K 之间的 equals 方法来进行区分是否相同, 相同则替换value并返回value, 不相同, 则在将后添加的元素保存在上一个元素的 next 节点. 关于扩容请看源码 ↓↓↓↓↓↓↓↓
 
-![image/5.jpg](image/5.jpg)
+![../image/5.jpg](../image/5.jpg)
 
 
 
