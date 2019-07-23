@@ -1,3 +1,4 @@
+![../image/6.jpg](../image/6.jpg)![../image/7.jpg](../image/7.jpg)
 #### HashMap(jdk1.8)
 
 hashmap 基于 数组 + 链表; 当元素个数超过阀值, 会由链表转为 TreeNode(红黑树)
