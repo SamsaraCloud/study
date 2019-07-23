@@ -1,11 +1,7 @@
 package com.yangyun.collections;
 
 
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +19,7 @@ public class HashMapDemo {
         map.put("a", "a");
 
         String a = map.remove("a");
-        System.out.println(a);
+        List<String> list = new ArrayList<>();
+
     }
 }

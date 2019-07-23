@@ -6,6 +6,7 @@
         <module>spring</module>
         <module>juc</module>
         <module>common</module>
+        <module>java-collection</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
