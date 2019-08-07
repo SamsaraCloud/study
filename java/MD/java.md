@@ -428,11 +428,39 @@ RejectedExecutionHandler handler:
 
 **jvm 提供四种拒绝策略:**
 
-AbortPolicy(默认): 直接抛出异常 RejectedExecutionException 阻止系统正常运行 
+AbortPolicy(默认): 直接抛出异常 RejectedExecutionException 阻止系统正常运行 , 当任务 > 最大线程数 + 缓存池个数
 
 CallerRunsPolicy:  不会抛异常, 也不会丢弃任务, 而是将某些任务回退给调用者
 
 DiscardOldestPolicy:  抛弃队列中等待最久的任务, 然后把当前任务加入到队列中尝试再次提交当前任务
 
 DiscardPolicy: 直接丢弃任务, 不做任何处理不抛异常. 在允许丢弃任务的情况下, 是最好的一种方案
+
+**如何合理配置线程池线程数?**
+
+业务类型
+
+```java
+Runtime.getRuntime().availableProcessors(); // cpu 核数
+```
+
+CPU 密集型: 指该任务需要大量的运算, 而没有阻塞, cpu 一直全速运行;  cpu 核数 + 1 的线程池线程数
+
+IO 密集型: 指任务并不是一直在执行任务,  任务需要大量的 IO, 即大量阻塞, 大部分线程都阻塞, 尽可能配置多的线程数; 
+
+​	cpu 核数 * 2;  CPU核数 /(1-阻塞系数) 阻塞系数在 0.8~0.9之间
+
+**死锁编码及定位分析**	
+
+![image/5.PNG](image/5.PNG)
+
+死锁指两个或两个以上的进程在执行过程中, 因争夺资源而造成的一种***互相等待的现象***
+
+产生原因: ① 系统资源不足 ② 进程运行推进的顺序不当 ③ 资源分配不当
+
+解决:
+
+① 通过 jps -l 查看进程号
+
+② jstack  进程号 查看具体代码
 
