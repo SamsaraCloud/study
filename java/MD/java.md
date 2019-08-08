@@ -464,3 +464,57 @@ IO 密集型: 指任务并不是一直在执行任务,  任务需要大量的 IO
 
 ② jstack  进程号 查看具体代码
 
+###jvm篇
+
+##### jvm 参数类型
+
+​	**标配参数**: 在jdk各个版本之间稳定, 很少有大变化
+
+​		-version, -help,  -showversion
+
+​	**X 参数**
+
+​		-Xint 解释执行  -Xcomp 第一次使用就编译成本地代码    -Xmixed 混合模式,先编译后执行
+
+​	**XX 参数**
+
+​		① Boolean 类型 
+
+​			-XX: + 或者 - 某个属性值; + 表示开启相应属性特性, - 表示关闭相应属性特性
+
+​			jinfo -flag  参数名 进程编号 ==>   jinfo -flag PrintGCDetails 12184
+
+​		② k v 设置类型
+
+​			-XX:参数名=值  ====> -xx:MetaSpaceSize=64m  设定元空间大小
+
+**查看一个正在运行的 java 程序某个 jvm 参数是否开启, 对应的值是什么**
+
+jinfo -flag 参数名 进程号
+
+​	![image/7.PNG](image/7.PNG)
+
+​		![image/6.PNG](image/6.PNG)
+
+jinfo -flags 进程号   查看当前 jvm 所有生效的参数以及参数值
+
+![image/8.PNG](image/8.PNG)
+
+-Xms =-XX:InitialHeapSize    -Xmx = -XX:MaxHeapSize
+
+**查看jvm初始化参数**
+
+java -XX:+PrintFlagsInitial
+
+**查看 jvm 修改更新后参数值**
+
+java -XX:PrintFlagsFinal -version
+
+对于其中 = 和 := ; = 表示 jvm 初始值, := 表示 jvm 加载后修改或用户修改后的值
+
+**查看 jvm 命令行标记**
+
+![image/9.PNG](image/9.PNG)
+
+
+
