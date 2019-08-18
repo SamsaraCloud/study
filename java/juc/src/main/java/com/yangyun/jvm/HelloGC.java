@@ -14,6 +14,8 @@ public class HelloGC {
     public static void main(String[] args) {
         System.out.println("*************HelloGC");
 
+//        byte[] b = new byte[10 * 1024 * 1024];
+
         try {
             TimeUnit.SECONDS.sleep(Integer.MAX_VALUE);
         } catch (InterruptedException e) {

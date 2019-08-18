@@ -466,6 +466,8 @@ IO 密集型: 指任务并不是一直在执行任务,  任务需要大量的 IO
 
 ###jvm篇
 
+**jvm 初始 deap 最小内存为 1/64, 最大内存为 1/4** 
+
 ##### jvm 参数类型
 
 ​	**标配参数**: 在jdk各个版本之间稳定, 很少有大变化
@@ -515,6 +517,98 @@ java -XX:PrintFlagsFinal -version
 **查看 jvm 命令行标记**
 
 ![image/9.PNG](image/9.PNG)
+
+**jvm 常用参数设置**
+
+-Xms: -XX:InitialHeapSize  初始化最小堆内存(物理内存十六分之一)
+
+-Xmx: -XX:MaxHeapSize  最大堆内存(物理内存四分之一)
+
+-Xss: -XX:ThreadStackSize 设置单个线程栈大小, 一般默认为 512~1024k(默认大小依赖平台)
+
+-Xmn 设置年轻代大小(默认堆得三分之一, 老年代三分之二)
+
+-XX:PrintCommandLineFlags: 在命令行打印配置的参数
+
+![image/10.PNG](image/10.PNG)
+
+-xx:PrintGCDetail: 打印详细 GC 收集日志信息
+
+GC 收集日志信息
+
+![image/11.PNG](image/11.PNG)
+
+FULL GC 收集日志
+
+![image/12.PNG](image/12.PNG)
+
+-XX:SurvivorRatio
+
+​	默认 -XX:SURvivorRatio=8, Eden:S0:S1 = 8:1:1
+
+​	SurvivorRatio 值是设置 Eden 区的比列, S0, S1 一样	
+
+-XX:NewRatio
+
+​	默认: -XX:NewRatio=2; old 占 2, young 占1
+
+​	配置新生代和老年代占比;
+
+-XX:MaxTenuringThreshold
+
+​	设置对象在年轻代存在的次数, 默认 15, 如果为 0 , 则年轻代对象不经过 Surviror 区直接进入老年代
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
