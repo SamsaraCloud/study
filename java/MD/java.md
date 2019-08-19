@@ -558,6 +558,138 @@ FULL GC 收集日志
 
 ​	设置对象在年轻代存在的次数, 默认 15, 如果为 0 , 则年轻代对象不经过 Surviror 区直接进入老年代
 
+**java 引用**
+
+![image/13.PNG](image/13.PNG)
+
+Reference(强引用): 把一个对象赋给一个引用变量, 这个引用变量就是强引用; 对于强引用对象, ***就算 jvm 出现 oom 也不会对该对象进行回收; 即使该对象以后永远都不会被用到***;
+
+```java
+Object a = new Object(); // a 就是强引用
+Object b = a; // b 也是强引用
+a = null; // 即使 a 为null, b 还是只向了 new Object(), b 还为2强引用
+System.gc(); // 只会回收 a
+```
+
+SoftReference(软引用): 对于软引用指向的对象, 当内存足够时不会回收, 当内存不足时, 会对其进行回收
+
+​	**当内存不够使用时**
+
+```java
+	/**
+     * @Author yangyun
+     * @Description: 内存够用就保留, 不够就回收
+     * @Date 2019/8/19 21:17
+     * @Param []
+     * @returnm void
+     **/
+    public static void softRefMemoryEnough (){
+        Object o = new Object();
+        SoftReference<Object> sf = new SoftReference<>(o);
+        System.out.println(o);
+        System.out.println(sf.get());
+        o = null;
+        System.gc();
+        /**
+         * 内存足够的情况
+         * java.lang.Object@27d6c5e0
+         * java.lang.Object@27d6c5e0
+         * null
+         * java.lang.Object@27d6c5e0
+         **/
+        System.out.println(o); // 此时系统内存足够, o null
+        System.out.println(sf.get()); // sf 为的值不为 null
+    }
+
+	public static void softRefMemoryNotEnough (){
+        Object o = new Object();
+        SoftReference<Object> sf = new SoftReference<>(o);
+        System.out.println(o);
+        System.out.println(sf.get());
+        o = null;
+
+        try {
+            byte b[] = new byte[30 * 1024 * 1024];
+        } catch (Throwable t) {
+
+        } finally {
+            System.out.println(o);
+            System.out.println(sf.get());
+        }
+    }
+
+    public static void main(String[] args) {
+//        softRefMemoryEnough();
+        softRefMemoryNotEnough();
+    }
+```
+
+```xml-dtd
+### 运行程序可以看到打印信息
+① 内存足够时
+[GC (Allocation Failure) [PSYoungGen: 1024K->504K(1536K)] 1024K->664K(5632K), 0.0007805 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[GC (Allocation Failure) [PSYoungGen: 1528K->504K(1536K)] 1688K->981K(5632K), 0.0009326 secs] [Times: user=0.13 sys=0.02, real=0.00 secs] 
+[GC (Allocation Failure) [PSYoungGen: 1528K->504K(1536K)] 2005K->1133K(5632K), 0.0006664 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+java.lang.Object@27d6c5e0
+java.lang.Object@27d6c5e0
+[GC (System.gc()) [PSYoungGen: 562K->504K(1536K)] 1191K->1229K(5632K), 0.0005788 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[Full GC (System.gc()) [PSYoungGen: 504K->0K(1536K)] [ParOldGen: 725K->893K(4096K)] 1229K->893K(5632K), [Metaspace: 3459K->3459K(1056768K)], 0.0067961 secs] [Times: user=0.03 sys=0.00, real=0.01 secs] 
+null
+// 因为内存足够所以软引用引用的对象还存在 
+java.lang.Object@27d6c5e0
+Heap
+ PSYoungGen      total 1536K, used 49K [0x00000000ffe00000, 0x0000000100000000, 0x0000000100000000)
+  eden space 1024K, 4% used [0x00000000ffe00000,0x00000000ffe0c698,0x00000000fff00000)
+  from space 512K, 0% used [0x00000000fff80000,0x00000000fff80000,0x0000000100000000)
+  to   space 512K, 0% used [0x00000000fff00000,0x00000000fff00000,0x00000000fff80000)
+ ParOldGen       total 4096K, used 893K [0x00000000ffa00000, 0x00000000ffe00000, 0x00000000ffe00000)
+  object space 4096K, 21% used [0x00000000ffa00000,0x00000000ffadf5a8,0x00000000ffe00000)
+ Metaspace       used 3465K, capacity 4496K, committed 4864K, reserved 1056768K
+  class space    used 376K, capacity 388K, committed 512K, reserved 1048576K
+            
+② 内存不够
+[GC (Allocation Failure) [PSYoungGen: 1024K->504K(1536K)] 1024K->704K(5632K), 0.0007722 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[GC (Allocation Failure) [PSYoungGen: 1528K->504K(1536K)] 1728K->1038K(5632K), 0.0010458 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[GC (Allocation Failure) [PSYoungGen: 1528K->512K(1536K)] 2062K->1291K(5632K), 0.0007314 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+java.lang.Object@27d6c5e0
+java.lang.Object@27d6c5e0
+[GC (Allocation Failure) [PSYoungGen: 598K->512K(1536K)] 1377K->1347K(5632K), 0.0006289 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[GC (Allocation Failure) [PSYoungGen: 512K->512K(1536K)] 1347K->1387K(5632K), 0.0008403 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[Full GC (Allocation Failure) [PSYoungGen: 512K->0K(1536K)] [ParOldGen: 875K->1009K(4096K)] 1387K->1009K(5632K), [Metaspace: 3459K->3459K(1056768K)], 0.0070479 secs] [Times: user=0.02 sys=0.00, real=0.01 secs] 
+[GC (Allocation Failure) [PSYoungGen: 0K->0K(1536K)] 1009K->1009K(5632K), 0.0005101 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[Full GC (Allocation Failure) [PSYoungGen: 0K->0K(1536K)] [ParOldGen: 1009K->990K(4096K)] 1009K->990K(5632K), [Metaspace: 3459K->3459K(1056768K)], 0.0064761 secs] [Times: user=0.00 sys=0.00, real=0.01 secs] 
+// 因为内存不够, 所以被回收了
+null
+null
+Heap
+ PSYoungGen      total 1536K, used 31K [0x00000000ffe00000, 0x0000000100000000, 0x0000000100000000)
+  eden space 1024K, 3% used [0x00000000ffe00000,0x00000000ffe07d28,0x00000000fff00000)
+  from space 512K, 0% used [0x00000000fff80000,0x00000000fff80000,0x0000000100000000)
+  to   space 512K, 0% used [0x00000000fff00000,0x00000000fff00000,0x00000000fff80000)
+ ParOldGen       total 4096K, used 990K [0x00000000ffa00000, 0x00000000ffe00000, 0x00000000ffe00000)
+  object space 4096K, 24% used [0x00000000ffa00000,0x00000000ffaf7a70,0x00000000ffe00000)
+ Metaspace       used 3466K, capacity 4496K, committed 4864K, reserved 1056768K
+  class space    used 376K, capacity 388K, committed 512K, reserved 1048576K
+```
+
+WeakReference(弱引用): 在执行 gc 的时候, 不管内存是否够用都会被回收
+
+![image/14.PNG](image/14.PNG)
+
+PhantomReference(虚引用): 任何时候都可以被 jvm 护回收, 不能单独使用, 也不能通过它访问对象, 并且只能和引用队列(ReferenceQueue)联合使用; 
+
+主要作用是跟踪对象被垃圾回收的状态, 仅仅提供了一种确保对象呗 finalize 以后, 做某些事情的机制
+
+**ReferenceQueue**: 引用队列
+
+当引用队列和引用结合使用时,  当 GC 释放内存的时候, 对将引用放入到 ReferenceQueue 中, 意味着引用指向的堆内存中的对象被回收. 通过这种方式, 我们可以在对象被回收做一些后续操作
+
+#### OOM
+
+![image/15.PNG](image/15.PNG)
+
+
+
 
 
 
