@@ -688,6 +688,46 @@ PhantomReference(虚引用): 任何时候都可以被 jvm 护回收, 不能单�
 
 ![image/15.PNG](image/15.PNG)
 
+java.lang.StackOverflowError: 栈溢出, 由于方法深度调用(递归)
+
+java.lang.OutOfMemoryError: java heap space  java 堆溢出, 内存中对象超出最大堆大小导致
+
+java.lang.OutOfMemoryError: GC overhead limit exceeded
+
+​	[参考资料](https://blog.csdn.net/renfufei/article/details/77585294)
+
+​	因为 GG 为了释放较小的空间而占用了 98% 的时间, 也就是回收了 2% 使用 98% 的时间, 然后多次重复这个操作;
+
+​	一般因为堆内存设置较小, 或者程序有大量对象创建却没有被回收
+
+java.lang.OutOfMemoryError: Direct buffer memory
+
+​	写 NIO 程序经常使用 ByteBuffer 来读取或写入数据, 这是一种基于通道 (channel) 和缓冲区(Buffer) 的 I/O 操作, 它可以使用 Native 函数库直接分配内存, 然后通过一个存储在 java 堆里面的 DirectByteBuffer 对象作为这块内存的引用进行操作, 这样能显著提高性能, 因为避免了在 java 堆和 Native 堆中来回复制数据
+
+​	ByteBuffer.allocate(capability) 是直接在 jvm 中分配内存, 属于 GC 管辖, 由于需要拷贝数据, 所以速度相对较慢
+
+​	ByteVBuffer.allocateDirect(capability) 是分配 os 本地内存(系统物理内存), 不属于 gc 管辖, 由于不需要内存拷贝所以速度较快
+
+​	如果在进行大量 I/O 操作的时候, 由于堆内存使用较少 gc 基本不会执行, 而本地内存在持续使用, 当本地内存不够使用的时候就会抛出: 本地 OutOfMemoryError 错误
+
+java.lang.OutOfMemoryError: unable to create new native thread
+
+​	高并发请求服务器时, 经常出现该错误
+
+​	导致原因
+
+​		应用创建了太多线程, 超过系统承载极限
+
+​		服务器不允许应用程序创建这么多线程, Linux 系统默认允许单个进程可以创建线程数是1024 个
+
+​	解决方法
+
+​		分析应用程序是否真的需要创建这么多线程, 降低应用程序的线程数量
+
+​		如果需要创建很多线程, 可以通过修改 linux 系统默认配置, 扩大默认线程数
+
+java.lang.OutOfMemoryError: Metaspace
+
 
 
 
