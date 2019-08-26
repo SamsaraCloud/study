@@ -510,7 +510,7 @@ java -XX:+PrintFlagsInitial
 
 **查看 jvm 修改更新后参数值**
 
-java -XX:PrintFlagsFinal -version
+java -XX:+PrintFlagsFinal -version
 
 对于其中 = 和 := ; = 表示 jvm 初始值, := 表示 jvm 加载后修改或用户修改后的值
 
@@ -688,11 +688,11 @@ PhantomReference(虚引用): 任何时候都可以被 jvm 护回收, 不能单�
 
 ![image/15.PNG](image/15.PNG)
 
-java.lang.StackOverflowError: 栈溢出, 由于方法深度调用(递归)
+**java.lang.StackOverflowError:** 栈溢出, 由于方法深度调用(递归)
 
-java.lang.OutOfMemoryError: java heap space  java 堆溢出, 内存中对象超出最大堆大小导致
+**java.lang.OutOfMemoryError:** java heap space  java 堆溢出, 内存中对象超出最大堆大小导致
 
-java.lang.OutOfMemoryError: GC overhead limit exceeded
+**java.lang.OutOfMemoryError:** GC overhead limit exceeded
 
 ​	[参考资料](https://blog.csdn.net/renfufei/article/details/77585294)
 
@@ -700,7 +700,7 @@ java.lang.OutOfMemoryError: GC overhead limit exceeded
 
 ​	一般因为堆内存设置较小, 或者程序有大量对象创建却没有被回收
 
-java.lang.OutOfMemoryError: Direct buffer memory
+**java.lang.OutOfMemoryError:** Direct buffer memory
 
 ​	写 NIO 程序经常使用 ByteBuffer 来读取或写入数据, 这是一种基于通道 (channel) 和缓冲区(Buffer) 的 I/O 操作, 它可以使用 Native 函数库直接分配内存, 然后通过一个存储在 java 堆里面的 DirectByteBuffer 对象作为这块内存的引用进行操作, 这样能显著提高性能, 因为避免了在 java 堆和 Native 堆中来回复制数据
 
@@ -710,13 +710,70 @@ java.lang.OutOfMemoryError: Direct buffer memory
 
 ​	如果在进行大量 I/O 操作的时候, 由于堆内存使用较少 gc 基本不会执行, 而本地内存在持续使用, 当本地内存不够使用的时候就会抛出: 本地 OutOfMemoryError 错误
 
-java.lang.OutOfMemoryError: unable to create new native thread
+**java.lang.OutOfMemoryError:** unable to create new native thread
+
+​	为何是 native thread?
+
+```java
+	public static void main(String[] args) {
+        Thread t = new Thread();
+        t.start();
+    }
+// 类 Thread 源码
+	public synchronized void start() {
+        /**
+         * This method is not invoked for the main method thread or "system"
+         * group threads created/set up by the VM. Any new functionality added
+         * to this method in the future may have to also be added to the VM.
+         *
+         * A zero status value corresponds to state "NEW".
+         */
+        if (threadStatus != 0)
+            throw new IllegalThreadStateException();
+
+        /* Notify the group that this thread is about to be started
+         * so that it can be added to the group's list of threads
+         * and the group's unstarted count can be decremented. */
+        group.add(this);
+
+        boolean started = false;
+        try {
+            start0(); // 该方法为本地方法
+            started = true;
+        } finally {
+            try {
+                if (!started) {
+                    group.threadStartFailed(this);
+                }
+            } catch (Throwable ignore) {
+                /* do nothing. If start0 threw a Throwable then
+                  it will be passed up the call stack */
+            }
+        }
+    }
+  	private native void start0();
+```
 
 ​	高并发请求服务器时, 经常出现该错误
 
 ​	导致原因
 
 ​		应用创建了太多线程, 超过系统承载极限
+
+```shell
+# 查看 root 用户单个进程线程数上限
+[root@iZwz94664y88uglloijjy9Z ~]# ulimit -u
+7284
+# 查看限制文件中配置的参数
+# 在 /etc/security/limits.d/?--nproc.conf  ? 在不同的 Linux 系统中所表示的数字不同, centos 7.2 64X
+[root@iZwz94664y88uglloijjy9Z ~]# 
+[root@iZwz94664y88uglloijjy9Z limits.d]# cat 20-nproc.conf 
+# Default limit for number of user's processes to prevent
+# accidental fork bombs.
+# See rhbz #432903 for reasoning.
+*          soft    nproc     4096 /# 普通用户
+root       soft    nproc     unlimited # root用户
+```
 
 ​		服务器不允许应用程序创建这么多线程, Linux 系统默认允许单个进程可以创建线程数是1024 个
 
@@ -726,9 +783,27 @@ java.lang.OutOfMemoryError: unable to create new native thread
 
 ​		如果需要创建很多线程, 可以通过修改 linux 系统默认配置, 扩大默认线程数
 
-java.lang.OutOfMemoryError: Metaspace
+**java.lang.OutOfMemoryError:** Metaspace
 
+​	jdk 8 中 元空间替代了永久代; 元空间不在虚拟机内存中, 而是使用本地内存
 
+​	元空间中保存的信息:
+
+​		① 虚拟机加载的类信息(rt.jar 中 String.class, ArrayList.class..) ② 常量池 ③ 静态变量 ④ 即时编译后的代码
+
+```shell
+java version "1.8.0_181"
+Java(TM) SE Runtime Environment (build 1.8.0_181-b13)
+Java HotSpot(TM) 64-Bit Server VM (build 25.181-b13, mixed mode)
+```
+
+**在这个版本中 -XX:MetaspaceSize 和 -XX:MaxMetaspaceSize 的大小不能相同**
+
+```shell
+# -XX:MetaspaceSize=8m -XX:MaxMetaspaceSize=8m, 报错
+Error occurred during initialization of VM
+MaxMetaspaceSize is too small.
+```
 
 
 
