@@ -20,7 +20,7 @@
 
 ​	处理器在进行重排序时必须考虑指令之间的**数据依赖性**;
 
-​	多线程环境中线程交替执行, 由于编译器优化重排的勋在, 两个线程中使用的变量能否保证一致性时无法确定的, 结果无法预测
+​	多线程环境中线程交替执行, 由于编译器优化重排的存在, 两个线程中使用的变量能否保证一致性是无法确定的, 结果无法预测
 
 1.4 volatile + DCL(DCL Double check lock 双端检索机制) 实现多线程环境下单列模式
 
@@ -96,8 +96,8 @@ JMM 关于同步的规定:
 
 ```java
 AtomicInteger atomicInteger = new AtomicInteger(5);
-初始值为 5, compareAndSet(6, 1016): 如果初始值为 6 就想初始值变更为 1016
-boolean b = atomicInteger.compareAndSet(6, 1016);
+初始值为 5, compareAndSet(6, 1016): 如果初始值为 6 就将初始值变更为 1016, 否则不变
+boolean b = atomicInteger.compareAndSet(6, 1016); 返回false
 ```
 
 原理: 自旋锁 和 unsafe

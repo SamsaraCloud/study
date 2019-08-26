@@ -40,7 +40,7 @@ public class StringUtil {
      * @param
      * @return void
      */
-    public static void aa(){
+    public static void getSameHashCodeStr(){
         Map<String, String> map = new HashMap<>();
         List<String> list = new ArrayList<>();
         int hash = 0;
