@@ -464,7 +464,7 @@ IO 密集型: 指任务并不是一直在执行任务,  任务需要大量的 IO
 
 ② jstack  进程号 查看具体代码
 
-###jvm篇
+##jvm篇
 
 **jvm 初始 deap 最小内存为 1/64, 最大内存为 1/4** 
 
@@ -684,15 +684,15 @@ PhantomReference(虚引用): 任何时候都可以被 jvm 护回收, 不能单�
 
 当引用队列和引用结合使用时,  当 GC 释放内存的时候, 对将引用放入到 ReferenceQueue 中, 意味着引用指向的堆内存中的对象被回收. 通过这种方式, 我们可以在对象被回收做一些后续操作
 
-#### OOM
+###OOM
 
 ![image/15.PNG](image/15.PNG)
 
-**java.lang.StackOverflowError:** 栈溢出, 由于方法深度调用(递归)
+#####java.lang.StackOverflowError:** 栈溢出, 由于方法深度调用(递归)
 
-**java.lang.OutOfMemoryError:** java heap space  java 堆溢出, 内存中对象超出最大堆大小导致
+#####java.lang.OutOfMemoryError:** java heap space  java 堆溢出, 内存中对象超出最大堆大小导致
 
-**java.lang.OutOfMemoryError:** GC overhead limit exceeded
+#####java.lang.OutOfMemoryError:** GC overhead limit exceeded
 
 ​	[参考资料](https://blog.csdn.net/renfufei/article/details/77585294)
 
@@ -700,7 +700,7 @@ PhantomReference(虚引用): 任何时候都可以被 jvm 护回收, 不能单�
 
 ​	一般因为堆内存设置较小, 或者程序有大量对象创建却没有被回收
 
-**java.lang.OutOfMemoryError:** Direct buffer memory
+#####java.lang.OutOfMemoryError:** Direct buffer memory
 
 ​	写 NIO 程序经常使用 ByteBuffer 来读取或写入数据, 这是一种基于通道 (channel) 和缓冲区(Buffer) 的 I/O 操作, 它可以使用 Native 函数库直接分配内存, 然后通过一个存储在 java 堆里面的 DirectByteBuffer 对象作为这块内存的引用进行操作, 这样能显著提高性能, 因为避免了在 java 堆和 Native 堆中来回复制数据
 
@@ -710,7 +710,7 @@ PhantomReference(虚引用): 任何时候都可以被 jvm 护回收, 不能单�
 
 ​	如果在进行大量 I/O 操作的时候, 由于堆内存使用较少 gc 基本不会执行, 而本地内存在持续使用, 当本地内存不够使用的时候就会抛出: 本地 OutOfMemoryError 错误
 
-**java.lang.OutOfMemoryError:** unable to create new native thread
+#####java.lang.OutOfMemoryError:** unable to create new native thread
 
 ​	为何是 native thread?
 
@@ -783,7 +783,7 @@ root       soft    nproc     unlimited # root用户
 
 ​		如果需要创建很多线程, 可以通过修改 linux 系统默认配置, 扩大默认线程数
 
-**java.lang.OutOfMemoryError:** Metaspace
+#####java.lang.OutOfMemoryError:** Metaspace
 
 ​	jdk 8 中 元空间替代了永久代; 元空间不在虚拟机内存中, 而是使用本地内存
 
@@ -805,13 +805,90 @@ Error occurred during initialization of VM
 MaxMetaspaceSize is too small.
 ```
 
+#### 垃圾回收
+
+##### 垃圾回收算法
+
+引用计数, 复制拷贝, 标记清除, 标记整理
+
+##### 垃圾回收方式
+
+![image/gc00.PNG](image/gc00.PNG)
+
+Serial: 串行, 为单线程环境设计且只有一个线程进行回收, 会暂停所有用户线程, 不适合服务器环境使用
+
+Parallel: 并行, 多个垃圾收集器并行工作, 此时用户线程是暂停的, 适应于科学计算/大数据处理等弱交互式应用
+
+CMS: 并发标记, 用户线程和垃圾收集器同时执行(不一定并行, 可能交替执行), 不需要暂停用户线程, 互联网公司多用, 适用堆相应时间有要求的场景
+
+G1: 将堆内存分割成不同的区域然后并发的对其进行回收
+
+![image/gc01.PNG](image/gc01.PNG)
+
+查看默认使用垃圾收集器: java -XX:+PrintCommandLineFlags -version
+
+```shell
+F:\git\study>java -XX:+PrintCommandLineFlags -version
+-XX:InitialHeapSize=132057920 -XX:MaxHeapSize=2112926720 -XX:+PrintCommandLineFlags -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:-UseLargePagesInd
+ividualAllocation -XX:+UseParallelGC
+java version "1.8.0_181"
+Java(TM) SE Runtime Environment (build 1.8.0_181-b13)
+Java HotSpot(TM) 64-Bit Server VM (build 25.181-b13, mixed mode)
+```
+
+java GC 回收的类型主要有:
+
+![image/GC02.PNG](image/GC02.PNG)
+
+![image/gc03.PNG](image/gc03.PNG)
+
+![image/gc04.PNG](image/gc04.PNG)
 
 
 
+UseSerialGC, UseParallelGC, UseConcMarkSweepGC, UseParNewGC, UseParallelOldGC, UseG1GC
 
+DefNew: Default New Genaration
 
+Tenured: old
 
+parNew: Parallel New Generation
 
+PSYoungGen:Parallel Scavenge
+
+ParOldGen: Parallet Old Generation
+
+######新生代 
+
+串行 GC : Serial/Serial Copying
+
+一个单线程收集器, 在进行垃圾回收的时候, 必须暂停其他所有的工作线程直到它收集结束
+
+串行收集器是最古老最稳定以及高效的收集器, 只使用一个线程去回收, 但其在进行垃圾回收的时候可能会产生较长的停顿(Stop The world), 虽然需要暂停其他工作线程, 但是它简单高效, 对于限定单个 CUP 环境, **没有线程交互的开销可以获得最高效的单线程垃圾收集, 因此 Serial 依然是 java 虚拟机运行在 Client 模式下默认的新生代垃圾收集器**
+
+对应 JVM 参数: -XX:+UseSerialGC
+
+开启后会使用: Serial(Young 使用) + Serial Old (Old 区使用)的收集器组合
+
+表示: 新生代, 老年代都会使用串行回收收集器, 新生代使用复制算法, 老年代使用复制-整理算法
+
+例: -Xms10m -Xmx10m -XX:+PrintGCDetails -XX:+UseSerialGC 
+
+![image/gc000.PNG](image/gc000.PNG)
+
+② 并行 GC : ParNew
+
+使用多线程进行垃圾回收, 在进行垃圾回收的时候, 会 STW 所有工作线程直到垃圾回收结束
+
+![image/gc05.PNG](image/gc05.PNG)
+
+ParNew 收集器其实就是 Serial 收集器新生代的并行多线程版本, 最常见的场景就是结合 CMS GC 工作, 其余的行为和 Serial 完全一样. **它是很多 java 虚拟机运行在 Sever 模式下新生代的默认垃圾收集器**
+
+常见对应 jvm 参数: -XX:+UseParNewGC, 启用 ParNew 只会影响新生代, 不影响老年代
+
+开启后会使用: SerialNew(Young 使用) + Serial Old (Old 区使用)的收集器组合, 新生代使用复制算法, 老年代使用标记-整理算法
+
+③ 并行回收 GC: Parallel / Parallel Scavenge
 
 
 
