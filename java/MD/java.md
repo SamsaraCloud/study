@@ -858,7 +858,7 @@ PSYoungGen:Parallel Scavenge
 
 ParOldGen: Parallet Old Generation
 
-######新生代 
+#####新生代
 
 串行 GC : Serial/Serial Copying
 
@@ -888,35 +888,211 @@ ParNew 收集器其实就是 Serial 收集器新生代的并行多线程版本, 
 
 开启后会使用: SerialNew(Young 使用) + Serial Old (Old 区使用)的收集器组合, 新生代使用复制算法, 老年代使用标记-整理算法
 
+但是, ParNew + Tenured 这样的搭配在 java 8 中已经不推荐使用
+
+-XX:ParallelGCThreads 限制线程数量, 默认和 CPU 数量一样; 
+
+-XX:ParallelGCThreads=N, CPU>8 N = 5/8, CPU<8 N=实际 cpu 个数
+
 ③ 并行回收 GC: Parallel / Parallel Scavenge
 
+![image/gc06.PNG](image/gc06.PNG)
 
+Parallel Scavenge 收集器类似 ParNew 也是一个新生代垃圾收集器, 使用复制算法, 也是一个并行多线程的垃圾收集器, 俗称吞吐量优先收集器. 也就是说: 串行收集器在新生代和老年代的并行化
 
+**它关注的重点:**
 
+**可控制的吞吐量**(Thoughput = 运行用户代码时间/(运行用户代码时间 + 垃圾回收时间), 也就是说, 程序运行100分分钟, 垃圾收集 1分钟, 吞吐量就是 99%), 高吞吐量意味着高效利用 cpu 的时间, 它多用于在后台运算而不需要太多交互的任务.
 
+**自适应调节策略也是 ParallelScavenge 收集器于 ParNew 收集器一个重要的区别.** (自适应调节策略: 虚拟机会根据当前系统的运行情况收集性能监控信息, 动态调整这些参数以提供最合适的停顿时间(-XX:MaxGCPauseMillis) 或最大吞吐量)
 
+常用 jvm 参数: -XX:+UseParallelGC 或 -XX:+UseParallelOldGC(可相互激活)
 
+使用 ParallelScavenge 收集器, 开启参数以后, 新生代使用复制算法, 老年代使用标记-整理算法
 
+##### 老年代
 
+######并行
 
+ Parallel Old 收集器是 Parallel Scavenge 的老年代版本, 使用多线程的标记-征集算法, Parallel Old 收集器在 JDK1.6 才开始提供. 在 JDK1.6 以前, 新生代使用 ParallelScavenge 收集器只能搭配老年代的 Serial Old 收集器, 只能保证新生代的吞吐量, 无法保证整体的吞吐量. 在 JDK1.6 之前 (Parallel Scavenge + Serial Old)
 
+Parallel Old 正式为了在老年代同样提供吞吐量优先的垃圾收集器, 如果系统对吞吐量的要求比较高, JDK1.8 后可以优先考虑新生代 Paralllel Scavenge 和老年代 Parallel Old 收集器的搭配策略. 在JDK1.8 及以后(Parallel Scavenge + Parallel Old)
 
+JVM 常用参数: 
 
+-XX:+UseParallelOldGC 使用 Parallel Old 收集齐全, 设置该参数后, 新生代默认使用 Parallel Scavenge
 
+###### 并发标记清除GC(CMS)
 
+CMS 收集器(Concurrent Mark Sweep: 并发标记清除) **是一种以后去最短回收停顿时间为目标的收集器**
 
+适合应用在互联网站或者 B/S 系统的服务器上, 这类应用尤其重视服务器的响应速度, **希望系统停顿时间最短**
 
+CMS 非常适合堆内存大, CPU 核数多的服务器端应用, 也是 G1 出现之前大型应用的首选垃圾收集器
 
+![image/gc07.PNG](image/gc07.PNG)
 
+① Initial Mark: 初始标记 只是标记一下 GC Roots 能直接关联的对象, 速度很快, 但还是需要暂停所有的工作线程
 
+②CMS Concurrent Mark: 并发标记和用户线程一起, 进行 GC Roots 跟踪的过程, 和用户线程一起工作, 不需要暂停工作线程. 主要标记过程, 标记全部对象
 
+③重新标记 CMS Remark 为了修正咋并发标记期间, 因用户程序继续运行而导致标记产生变动的那一部分对象的标记记录, 仍然需要暂停所有的工作线程. 由于并发标记时, 用户线程依然运行, 因此在正式清理前, 再做修正
 
+④并发清除 CMS Concurrent Sweep 和用户线程一起  清除 GC Roots 不可达对象, 和用户线程一起工作, 不需要暂停工作线程, 基于标记结果, 直接清理对象. 由于耗时最长的并发标记和并发清除过程中, 垃圾收集线程可以和用户线程一起并发工作, 所以总体上来看 CMS 收集器的内存回收和用户线程是一起并发执行的
 
+![image/gc08.PNG](image/gc08.PNG)
 
+优点: 并发收集停顿低; 
 
+缺点:
 
+① 并发执行对 cpu 的压力比较大
 
+由于并发执行, CMS 在收集与应用线程会同时增加对堆内存的占用, **也即是说, CMS 必须要在老年代堆内存用尽之前完成垃圾回收, 否则 CMS 回收失败时,** 将触发担保机制, 串行老年代收集器将会以 STW 的方式进行一次 GC, 从而造成较大停顿时间
 
+② 采用并发标记清除算法会导致大量内存碎片 
+
+标记清除算法无法整理空间碎片, 老年代空间会随着应用时长逐步耗尽, 最后不得不通过担保机制对堆内存进行压缩. CMS 也提供了参数 -XX:CMSFullGCsBeForeCompaction(默认 0, 即每次进行内存整理) 来制定多少次 CMS 收集之后, 进行一次压缩的 Full GC
+
+Concurrent Mark Sweep 并发标记清除, 并发收集低停顿, **并发指的是与用户线程一起执行**
+
+开始启收集器的 JVM 参数: -XX:+UseConcMarkSweepGC 开启该参数后会自动将 -XX:+UseParNewGC 打开
+
+开启参数后, 使用 ParNew(Young 使用) + CMS (Old 使用) + Serial Old 的收集器组合, **Serial Old 将作为CMS 出错的后备收集器**
+
+-Xms10m -Xmx10m -XX:+PrintGCDetails -XX:+UseConcMarkSweepGC
+
+底层代码: 
+
+![image/gc09.PNG](image/gc09.PNG)
+
+##### 如何选择垃圾收集器
+
+单 CPU 或小内存, 单机程序
+
+​	-XX:+UseSerialGC
+
+多 CPU , 需要做大吞吐量, 如后台计算型应用
+
+​	-XX:+UseParallelGC 或者 -XX:UseParallelOldGC
+
+多 CPU, 追求低停顿时间, 需要最快响应速度, 如互联网应用
+
+​	-XX:+UseConcMarkSweepGC
+
+​	-XX:+UseParNewGC
+
+![image/gc10.PNG](image/gc10.PNG)
+
+##### G1 GC
+
+###### 以前收集器的特点
+
+① 年轻代和老年代是各自独立且连续的内存块
+
+② 年轻代收集使用单 eden + s0 + s1 进行复制算法
+
+③ 老年代收集必须扫描整个老年代区域
+
+④ 都是以尽可能少而快速地执行 GC 为设计原则
+
+###### 什么是G1
+
+G1 (Garbage-First) 收集器, 是一款面向服务端应用的收集器
+
+![image/gc11.PNG](image/gc11.PNG)
+
+从官网的描述中, 我们知道 G1 是一种服务端的垃圾手哦哦及其, 应用在多处理器和大容量内存环境中, 在实现高吞吐量的同时, 尽可能的满足垃圾收集暂停时间的要求, 另外, 它还具有以下特征: 
+
+① 像 CMS 收集器一样, 能与应用程序线程并发执行
+
+②  整理空闲空间更快
+
+③ 需要更多的时间来预测 GC 停顿时间
+
+④ 不希望牺牲大量的吞吐性能
+
+⑤ 不需要更大的 java heap
+
+G1 收集器的**设计目标是取代 CMS 收集器**, 它同 CMS 相比, 在以下方面更出色
+
+① G1 是一个有整理内存过程的垃圾收集器, 不会产生很多内存碎片
+
+② G1 的 Stop The World 更可控, G1 在停顿时间上添加了预测机制, 用户可以指定期望停顿时间
+
+CMS 垃圾收集器虽然减少了暂停应用程序的运行时间, 但是它还是存在着内存碎片问题. 于是, 为了取出内存碎片问题, 同时又保留 CMS 垃圾收集器低暂停时间的优点, JAVA7 发布了一个新的垃圾是搜集器 - G1 垃圾收集器
+
+G1 是在 2012年才在 jdk 1.7u4 中可用. **Oracle 官方计划在 jdk 9 中将 G1 变成默认的垃圾收集器以替代 CMS.** 它是一款面向服务端应用的收集器, 主要应用在多 CPU 和大内存服务器环境下, 极大的减少垃圾收集的停顿时间, 全面提升服务器的性能, 逐步替换 java8 以前的 CMS 收集器
+
+G1 相比以前的收集器, 主要改变是 Eden, Survivor 和 Tenured 等内存区域不在是连续的, 而是变成了一个个大小一样的 region, 每个 region 从 1M 到 32M 不等, 一个 region 有可能属于 Eden,Survivor 或者 Tenured 内存区域
+
+###### G1 特点
+
+① G1 能充分利用多 cpu, 多核环境硬件优势, 尽量缩短 STW
+
+② G1 整体上采用标记-整理算法, 局部是用过复制算法, **不会产生内存碎片**
+
+③ 宏观上看 G1 之中不在区分年轻代和老年代. **把内存划分成多个独立的子区域(Region)** 
+
+④ G1 收集器粒粒面将真个的内存区域都混合在一起, **但其本身依然在小范围内要进行年轻代和老年代的区分,** 保留了新生代和老年代, 但他们不再试物理隔离的, 而是一部分 Region 的集合且不需要 Region 是连续的, 也就是说依然会采用不同的 GC 方式来处理不同的区域
+
+⑤ G1 虽然也是分代收集器但整个内存区分不存在物理上的年轻代和老年代的区别, 也不需要完全独立的 Survivor(to space) 堆做复制准备. G1 只有逻辑上的分代概念, 或者说每个分区都可能随 G1 的运行在不同代之间前后切换
+
+###### G1 底层原理
+
+**Region 区域化垃圾收集器**
+
+区域化内存划片 Region, 整体变为了一系列不连续的内存区域, 避免了全内存的 GC 操作.
+
+核心思想是将真个堆 内存区域分成大小相同的子区域(Region), 在 JVM 启动时会自动设置这些子区域的大小,  在堆得使用上, **G1 并不要求对象的存储一定是物理上连续的只要逻辑上连续即可,** 每个分区也不会固定的为某个代服务, 可以按需在年轻代和老年大之间切换,. 启动时可以通过参数 -XX:G1HeapRegionSize=n 制定分区大小(1MB-32MB, 且是 2 的幂), 默认将整堆划分为 2048 个分区.
+
+大小范围在1MB-32MB, 最多设置20448个分区, 也就是最大能支持的内存大小: 32MB * 2048 = 65536MB = 64GB
+
+![image/GC12.PNG](image/GC12.PNG)
+
+G1 算法将堆分为偌干个区域(Region), 它仍然属于分代收集器
+
+这些Reion 的一部分包含新生代, 新生代的垃圾收集依然采用暂停所有应用线程的方式, 将存活对象拷贝到老年代或者 Survivor 空间
+
+这些 Region 的一部分包含老年代, G1 收集器通过将对象从一个区域复制到另一个区域完成了清理工作. 这就意味着, 在正常的处理过程中, G1 完成了堆得压缩, (至少是部分堆得压缩), 这样也就不会存在 CMS 内存碎片问题的存在了
+
+在G1 中, 还有一种特殊的区域, Humongous(巨大的) 区域。如果一个巨型对象占用的空间超过的分区容量的50%以上，G1收集器就认为这是一个大对象。这些**巨型对象默认直接会被分配在老年代**，如果它是一个短期存在的大对象，就会对垃圾收集器造成负面影响。为了解决这个问题，G1 划分了一个 Humongous 区，它用来专门存放大对象。如果一个 H 区装不下一个大对象，那么 G1会寻找连续的 H 区来存储。为了能找到连续的 H 区，有时候不得不启动 Full GC
+
+**回收步骤**
+
+G1收集器下的Young GC
+
+针对 Eden区进行收集，Eden区耗尽后会被触发，主要是小区域收集 + 形成连续的内存块，避免内存碎片
+
+① Eden区的数据移动到 Survivor区，假如出现Survivor区空间不够，Eden区数据会部分晋升到Old区
+
+② Survivor区的数据移动到新的Survivor区，部分数据晋升到Old区
+
+③ 最后Eden区收拾干净了，GC结束，用户的应用程序继续执行
+
+![image/gc13.PNG](image/gc13.PNG)
+
+![image/GC14.PNG](image/GC14.PNG)
+
+**收集步骤**
+
+![image/gc15.PNG](image/gc15.PNG)
+
+**常用配置参数**
+
+-XX:+UseG1GC
+
+-XX:G1HeapRegionSize=n 设置Region大小, 总大小为 你* 2048
+
+-XX:+MaxGCPauseMillis=n 最大GC停顿时间, 是个软目标, jvm 尽可能(不一定完成), 在规定时间内完成回收
+
+-XX:InitiatingHeapOccupancyPercent=n 堆占用多少时就触发GC, 默认 45
+
+-XX:ConcGCThreads=n 并发GC使用线程数
+
+-XX:G1ReservePercent=n 设置作为空闲空间的预留内存百分比, 降低目标空间溢出的粉线, 默认 10%
+
+**java -server jvm参数 -jar xxx.jar**
 
 
 
