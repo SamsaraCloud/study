@@ -343,6 +343,22 @@ BlockQueue: 不需要关心线程的阻塞和唤醒
 
 ![image/4.PNG](/image/4.PNG)
 
+###### ArrayBlockingQueue
+
+固定容量, 默认 FIFO
+
+```java
+// capacity 容量, fair 访问方式 true: FIFO false: 无序  c: 初始集合
+// capacity = c.size()
+public ArrayBlockingQueue(int capacity,
+                          boolean fair,
+                          Collection<? extends E> c)
+```
+
+
+
+- - 
+
 ##### 线程池
 
 实现多线程几种方式
