@@ -32,7 +32,7 @@ HashMap 底层实现为 Entry<K, V> 数组 + Node 链表 + TreeNode 红黑树, �
 private static final String STR = "Lq9BH,MR8aH,MQXAg,MQXBH,MR9Ag,N1wAg,N1wBH,N2WaH,LpXBH,N38aH,N39BH,N39Ag,N2XBH,LowAg,LpXAg,LpWaH,LowBH,Lq9Ag,MPwAg,MPvaH,MPwBH";
 ```
 
-**put()******
+**put()**
 
 ```java
 	static final int hash(Object key) {
