@@ -270,25 +270,32 @@ Unsafe (sun.misc)
          	private static final Unsafe unsafe = Unsafe.getUnsafe();
         	// 
          	final void lock() {
-             	// 传1原因: 当为第一个线程
                acquire(1);
            }
          	public final void acquire(int arg) {
+             	// !tryAcquire(arg) 第一次进来, 为true 
+             	// 当之前任务没有完成, 后面又有任务来获取锁, 
+             	// acquireQueued(addWaiter(Node.EXCLUSIVE), arg)) 添加大 队列中
            	if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
                	selfInterrupt();
        	}
-         	
+         	// 尝试获取锁
          	protected final boolean tryAcquire(int acquires) {
                final Thread current = Thread.currentThread();
+             	// 第一次默认值为 0
                int c = getState();
                if (c == 0) {
+                 	// 第一个任务, hasQueuedPredecessors() 返回false
+                 	// compareAndSetState(0, acquires)) 成功获取锁, 并改变 state 值为 1
                    if (!hasQueuedPredecessors() &&
                        compareAndSetState(0, acquires)) {
                        setExclusiveOwnerThread(current);
                        return true;
                    }
                }
+             	// 当希望获取锁的任务为同一个时(在 unlock() 未执行), 也可以获取锁(可重入)
                else if (current == getExclusiveOwnerThread()) {
+                 	// 在持有锁的任务没有完成的情况下, 每新来一个任务, nextc 都会加 1
                    int nextc = c + acquires;
                    if (nextc < 0)
                        throw new Error("Maximum lock count exceeded");
