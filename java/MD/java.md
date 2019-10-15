@@ -239,32 +239,79 @@ Unsafe (sun.misc)
 
    ReentrantLock(默认非公平锁): 可重入锁, 公平所, 非公平锁
 
-   ~~~java
    ```java
-      public class ReentrantLock implements Lock, java.io.Serializable {    
-      	// 默认非公平锁
-      	public ReentrantLock() {
-              sync = new NonfairSync();
-          }
-      	// true 为公平锁
-          public ReentrantLock(boolean fair) {
-              sync = fair ? new FairSync() : new NonfairSync();
-          }
+   public class ReentrantLockDemo {
+     	// 公平锁
+       ReentrantLock rl = new ReentrantLock(true);
+       rl.lock();
+       rl.lock();
+
+       new Thread(() -> {
+         rl.lock();
+       }, "aaa").start();
+       new Thread(() -> {
+         rl.lock();
+       }, "bbb").start();
    }
-      FairSync 和 NonfairSync implements Sync implements AbstractQueuedSynchronizer
    ```
+
+   ​
+
+   ~~~java
+   public class ReentrantLock implements Lock, java.io.Serializable { 
+     	// 初始化
+   	public ReentrantLock(boolean fair) {
+           sync = fair ? new FairSync() : new NonfairSync();
+       }
+     
+     	// 将 Sync 和 AbstractQueuedSynchronizer 的代码合并了一起说明
+     	static final class FairSync extends Sync extends AbstractQueuedSynchronizer {
+         	// 初始化, 用来做线程获取锁的判断
+         	private static final Unsafe unsafe = Unsafe.getUnsafe();
+        	// 
+         	final void lock() {
+             	// 传1原因: 当为第一个线程
+               acquire(1);
+           }
+         	public final void acquire(int arg) {
+           	if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+               	selfInterrupt();
+       	}
+         	
+         	protected final boolean tryAcquire(int acquires) {
+               final Thread current = Thread.currentThread();
+               int c = getState();
+               if (c == 0) {
+                   if (!hasQueuedPredecessors() &&
+                       compareAndSetState(0, acquires)) {
+                       setExclusiveOwnerThread(current);
+                       return true;
+                   }
+               }
+               else if (current == getExclusiveOwnerThread()) {
+                   int nextc = c + acquires;
+                   if (nextc < 0)
+                       throw new Error("Maximum lock count exceeded");
+                   setState(nextc);
+                   return true;
+               }
+               return false;
+           }
+       }
+   }
    ~~~
 
    可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码, 在同一线程在外层方法获得锁的时候, 再进入内层方法会自动获得锁; 也就是说线程可以进入任何一个它已经获得锁所同步的代码块
 
    ```java
-public void sync method01 (){
+   public void sync method01 (){
      	// 同一线程获得方法 method01 的锁, 将自动获得 method02 方法的锁
-	method02();
+   method02();
    }
    public void sync method02 (){
-  
+     
    }
+   ```
 ```
    
    公平锁: 指多个线程按照申请锁的顺序获取锁; **保证有序性**
@@ -329,7 +376,7 @@ package com.yangyun.study.thread;
        }
    }
    
-   ```
+```
 
 ##### 读写锁(ReentrantReadWriteLock 其读锁是共享锁, 写锁是独占锁)
 
@@ -373,7 +420,7 @@ public ArrayBlockingQueue(int capacity,
 
 
 
-- - 
+- - ​
 
 ##### 线程池
 

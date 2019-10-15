@@ -1,5 +1,7 @@
 package com.yangyun.thread;
 
+import lombok.Getter;
+
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -21,6 +23,14 @@ public class ReentrantLockDemo {
     public static void main(String[] args) {
         ReentrantLock rl = new ReentrantLock(true);
         rl.lock();
+        rl.lock();
+
+        new Thread(() -> {
+            rl.lock();
+        }, "aaa").start();
+        new Thread(() -> {
+            rl.lock();
+        }, "bbb").start();
 //        Phone phone = new Phone();
 //        new Thread (() -> {
 //            try {
