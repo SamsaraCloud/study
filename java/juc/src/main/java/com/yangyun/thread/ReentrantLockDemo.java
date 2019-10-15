@@ -1,5 +1,7 @@
 package com.yangyun.thread;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * @description 可重入锁: 公平锁, 非公平锁
  * 可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码,
@@ -17,22 +19,24 @@ package com.yangyun.thread;
 public class ReentrantLockDemo {
 
     public static void main(String[] args) {
-        Phone phone = new Phone();
-        new Thread (() -> {
-            try {
-                phone.sendSMS();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }, "t1").start();
-
-        new Thread (() -> {
-            try {
-                phone.sendSMS();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }, "t22").start();
+        ReentrantLock rl = new ReentrantLock(true);
+        rl.lock();
+//        Phone phone = new Phone();
+//        new Thread (() -> {
+//            try {
+//                phone.sendSMS();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }, "t1").start();
+//
+//        new Thread (() -> {
+//            try {
+//                phone.sendSMS();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }, "t22").start();
     }
 }
 

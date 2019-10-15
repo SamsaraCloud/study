@@ -218,7 +218,7 @@ Unsafe (sun.misc)
    }
    ```
 
-   #### ​值传递和引用传递
+   #### 值传递和引用传递
 
    八种基本数据类型都存在于栈中, 方法间相互调用, 基本类型传递为值传递, 不会改变原来的值;
 
@@ -239,31 +239,47 @@ Unsafe (sun.misc)
 
    ReentrantLock(默认非公平锁): 可重入锁, 公平所, 非公平锁
 
+   ~~~java
+   ```java
+      public class ReentrantLock implements Lock, java.io.Serializable {    
+      	// 默认非公平锁
+      	public ReentrantLock() {
+              sync = new NonfairSync();
+          }
+      	// true 为公平锁
+          public ReentrantLock(boolean fair) {
+              sync = fair ? new FairSync() : new NonfairSync();
+          }
+   }
+      FairSync 和 NonfairSync implements Sync implements AbstractQueuedSynchronizer
+   ```
+   ~~~
+
    可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码, 在同一线程在外层方法获得锁的时候, 再进入内层方法会自动获得锁; 也就是说线程可以进入任何一个它已经获得锁所同步的代码块
 
    ```java
-   public void sync method01 (){
+public void sync method01 (){
      	// 同一线程获得方法 method01 的锁, 将自动获得 method02 方法的锁
-   	method02();
+	method02();
    }
    public void sync method02 (){
-     
+  
    }
-   ```
-
+```
+   
    公平锁: 指多个线程按照申请锁的顺序获取锁; **保证有序性**
-
+   
    非公平锁: 指多个线程获取锁的顺序不是固定的, 有可能后申请的线程先获取锁, 在高并发情况下, 有可能造成反转和饥饿现象(有可能先申请的线程一直获取不到锁), 当后申请的线程失败后会采用类似公平锁的方式; **增加吞吐量**
-
+   
    synchronize 一种非公平锁
 
    #####自旋锁(spinlock)
-
+   
    指尝试获取锁的线程不会立即阻塞, 而是通过循环的方式去尝试获取锁, 这样的好处是减少线程上下文的消耗, 缺点是会消耗 CPU; 因为循环会消耗 CPU	应用在程序处理快速的地方
 
    ```java
-   package com.yangyun.study.thread;
-
+package com.yangyun.study.thread;
+   
    import java.util.concurrent.atomic.AtomicReference;
 
    /**
@@ -271,48 +287,48 @@ Unsafe (sun.misc)
     * @create 2019-06-22-11:22
     */
    public class SpinLockDemo {
-       AtomicReference<Thread> atomicReference = new AtomicReference<>();
-
+    AtomicReference<Thread> atomicReference = new AtomicReference<>();
+   
        public void myLock (){
-           Thread thread = Thread.currentThread();
+        Thread thread = Thread.currentThread();
            System.out.println(thread.getName() + "\t come in");
-
+   
            while (!atomicReference.compareAndSet(null, thread)){
-
+   
            }
        }
-
+   
        public void myUnLock (){
            Thread thread = Thread.currentThread();
            System.out.println(thread.getName() + "\t invoked");
            atomicReference.compareAndSet(thread, null);
-       }
-
-       public static void main(String[] args) throws InterruptedException {
+    }
+   
+    public static void main(String[] args) throws InterruptedException {
            SpinLockDemo spinLockDemo = new SpinLockDemo();
-
-           new Thread(() -> {
+   
+        new Thread(() -> {
                spinLockDemo.myLock();
                // 业务代码处理
                try {
                    Thread.sleep(5000);
-               } catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                    e.printStackTrace();
                }
                // 释放锁
                spinLockDemo.myUnLock();
            }, "AA").start();
-
+   
            Thread.sleep(1000);
-
+   
            new Thread(() -> {
                spinLockDemo.myLock();
-
+   
                spinLockDemo.myUnLock();
            }, "BB").start();
        }
    }
-
+   
    ```
 
 ##### 读写锁(ReentrantReadWriteLock 其读锁是共享锁, 写锁是独占锁)
