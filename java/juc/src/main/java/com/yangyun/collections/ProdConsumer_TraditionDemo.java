@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ProdConsumer_TraditionDemo {
 
     public static void main(String[] args) {
-        ShareData shareData = new ShareData();
+        ShareData2 shareData = new ShareData2();
         shareData.increment();
 
 //        new Thread(() -> {
@@ -41,7 +41,7 @@ public class ProdConsumer_TraditionDemo {
     }
 }
 
-class ShareData {// 资源类, 多线程环境下
+class ShareData2 {// 资源类, 多线程环境下
     private int number = 0;
     private Lock lock = new ReentrantLock();
     private Condition condition = lock.newCondition();

@@ -10,15 +10,15 @@ public class CollectionDemo {
 
     public static void main(String[] args) {
         // hashmap
-//        testHashMap();
+        testHashMap();
 
         // treemap
-        String k1 = null;
+//        String k1 = null;
 //        SortedMap<String, String> sortedMap = new TreeMap<>();
 //        sortedMap.put(null, null);
 //        Comparable<? super String> comparable = k1;
-        CollectionDemo cd = new CollectionDemo();
-        cd.compare("a", null);
+//        CollectionDemo cd = new CollectionDemo();
+//        cd.compare("a", null);
     }
 
     private static void testHashMap() {
