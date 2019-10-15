@@ -241,22 +241,28 @@ Unsafe (sun.misc)
 
    ```java
    public class ReentrantLockDemo {
-     	// 公平锁
-       ReentrantLock rl = new ReentrantLock(true);
-       rl.lock();
-       rl.lock();
-
-       new Thread(() -> {
-         rl.lock();
-       }, "aaa").start();
-       new Thread(() -> {
-         rl.lock();
-       }, "bbb").start();
+       try {
+           // 公平锁
+           ReentrantLock rl = new ReentrantLock(true);
+           rl.lock();
+        rl.lock();
+           // 能够更请清楚看整个执行流程
+   		TimeUnit.SECONDS.sleep(60);
+           new Thread(() -> {
+             rl.lock();
+           }, "aaa").start();
+           TimeUnit.SECONDS.sleep(60);
+           new Thread(() -> {
+             rl.lock();
+        }, "bbb").start();
+       } catch (Exception e){
+        e.printStackTrace();
+       }	
    }
    ```
-
-   ​
-
+   
+   #####lock
+   
    ~~~java
    public class ReentrantLock implements Lock, java.io.Serializable { 
      	// 初始化
@@ -275,7 +281,7 @@ Unsafe (sun.misc)
          	public final void acquire(int arg) {
              	// !tryAcquire(arg) 第一次进来, 为true 
              	// 当之前任务没有完成, 后面又有任务来获取锁, 
-             	// acquireQueued(addWaiter(Node.EXCLUSIVE), arg)) 添加大 队列中
+             	// acquireQueued(addWaiter(Node.EXCLUSIVE), arg)) 添加到队列中
            	if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
                	selfInterrupt();
        	}
@@ -290,6 +296,7 @@ Unsafe (sun.misc)
                    if (!hasQueuedPredecessors() &&
                        compareAndSetState(0, acquires)) {
                        setExclusiveOwnerThread(current);
+                       // 表示获取到了锁
                        return true;
                    }
                }
@@ -300,16 +307,50 @@ Unsafe (sun.misc)
                    if (nextc < 0)
                        throw new Error("Maximum lock count exceeded");
                    setState(nextc);
-                   return true;
+                return true;
                }
+            // 没有获取锁, 需要将当前任务添加到等待队列中
                return false;
+           }
+           // 将等待任务添加到 AQS 队列
+           private Node addWaiter(Node mode) {
+               Node node = new Node(Thread.currentThread(), mode);
+               // Try the fast path of enq; backup to full enq on failure
+               Node pred = tail;
+               if (pred != null) {
+                   node.prev = pred;
+                   // 设置尾部的元素, 将后面新加的元素
+                   if (compareAndSetTail(pred, node)) {
+                       pred.next = node;
+                       return node;
+                   }
+               }
+               enq(node);
+               return node;
+       	}
+           // 初始化 queue 中第一个 node
+           private Node enq(final Node node) {
+               for (;;) {
+                   Node t = tail;
+                   if (t == null) { // Must initialize
+                       if (compareAndSetHead(new Node()))
+                           tail = head;
+                   } else {
+                       // 实际添加元素
+                       node.prev = t;
+                       if (compareAndSetTail(t, node)) {
+                           t.next = node;
+                           return t;
+                       }
+                   }
+               }
            }
        }
    }
    ~~~
-
+   
    可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码, 在同一线程在外层方法获得锁的时候, 再进入内层方法会自动获得锁; 也就是说线程可以进入任何一个它已经获得锁所同步的代码块
-
+   
    ```java
    public void sync method01 (){
      	// 同一线程获得方法 method01 的锁, 将自动获得 method02 方法的锁
@@ -427,7 +468,7 @@ public ArrayBlockingQueue(int capacity,
 
 
 
-- - ​
+- - 
 
 ##### 线程池
 

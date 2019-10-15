@@ -2,6 +2,7 @@ package com.yangyun.thread;
 
 import lombok.Getter;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -21,16 +22,18 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ReentrantLockDemo {
 
     public static void main(String[] args) {
-        ReentrantLock rl = new ReentrantLock(true);
-        rl.lock();
-        rl.lock();
-
-        new Thread(() -> {
+        try {
+            ReentrantLock rl = new ReentrantLock(true);
             rl.lock();
-        }, "aaa").start();
-        new Thread(() -> {
-            rl.lock();
-        }, "bbb").start();
+//        rl.lock();
+            TimeUnit.SECONDS.sleep(60);
+            new Thread(() -> {
+                rl.lock();
+            }, "aaa").start();
+            TimeUnit.SECONDS.sleep(60);
+            new Thread(() -> {
+                rl.lock();
+            }, "bbb").start();
 //        Phone phone = new Phone();
 //        new Thread (() -> {
 //            try {
@@ -47,6 +50,9 @@ public class ReentrantLockDemo {
 //                e.printStackTrace();
 //            }
 //        }, "t22").start();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }
 
