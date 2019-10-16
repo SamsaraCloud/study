@@ -160,206 +160,314 @@ Unsafe (sun.misc)
    A, B 两线程; 主内存中原始值为 10, A 线程每次执行只需要 2 秒, B 线程每次执行需要 10 秒, 第一次 A 线程将主内存中值修改为 12, 第二次又将值修改为 10, 然后 B 线程获取主内存中值为 10, 然后修改; 在B 线程操作前, 主内存中的值已经被 A 线程修改过一次了. 在多线程高并发情况下, 在 B线程操作这个共享变量前的这个时间差内, 数据是变化的;
 
    AtomicReference, AtomicStampedReference 原子引用类, 通过 AtomicStampedReference 解决 CAS ABA 问题
+#### 集合类不安全问题
 
-   #### 集合类不安全问题
+1 产生原因; java.util.ConcurrentModificationException 并发修改异常
 
-   1 产生原因; java.util.ConcurrentModificationException 并发修改异常
+​	ArrayList 线程不安全的; 在多线程环境下, 一个线程在进行写操作时, 另一个线程进行读操作, 造成数据不一致
 
-   ​	ArrayList 线程不安全的; 在多线程环境下, 一个线程在进行写操作时, 另一个线程进行读操作, 造成数据不一致
+2 解决方法
 
-   2 解决方法
+​	使用 Vector , Vector.add() 使用了synchronize ,解决安全问题, 降低了并发性
 
-   ​	使用 Vector , Vector.add() 使用了synchronize ,解决安全问题, 降低了并发性
+​	Collections.synchronizeList(new ArrayList()); 
 
-   ​	Collections.synchronizeList(new ArrayList()); 
+​	new  CopyOnWriteArrayList(); 写时复制, 读写分离的思想, 读和写为不同容器
 
-   ​	new  CopyOnWriteArrayList(); 写时复制, 读写分离的思想, 读和写为不同容器
+```java
+List<T> list = new CopyOnWriteArrayList<>();
 
-   ```java
-   List<T> list = new CopyOnWriteArrayList<>();
+public class CopyOnWriteArrayList {
+	private transient volatile Object[] array;
 
-   public class CopyOnWriteArrayList {
-   	private transient volatile Object[] array;
+	public CopyOnWriteArrayList() {
+        setArray(new Object[0]);
+    }
 
-   	public CopyOnWriteArrayList() {
-           setArray(new Object[0]);
-       }
+	public boolean add(E e) {
+      	// 获取锁
+        final ReentrantLock lock = this.lock;
+      	// 加锁
+        lock.lock();
+        try {
+          	// 获取原对象
+            Object[] elements = getArray();
+            int len = elements.length;
+          	// 复制新对象, 并长度加 1
+            Object[] newElements = Arrays.copyOf(elements, len + 1);
+          	// 添加新元素
+            newElements[len] = e;
+          	// 将原对象引用指向新集合对象
+            setArray(newElements);
+            return true;
+        } finally {
+          	// 释放锁
+            lock.unlock();
+        }
+    }
 
-   	public boolean add(E e) {
-         	// 获取锁
-           final ReentrantLock lock = this.lock;
-         	// 加锁
-           lock.lock();
-           try {
-             	// 获取原对象
-               Object[] elements = getArray();
-               int len = elements.length;
-             	// 复制新对象, 并长度加 1
-               Object[] newElements = Arrays.copyOf(elements, len + 1);
-             	// 添加新元素
-               newElements[len] = e;
-             	// 将原对象引用指向新集合对象
-               setArray(newElements);
-               return true;
-           } finally {
-             	// 释放锁
-               lock.unlock();
-           }
-       }
+	// 将原对象引用指向新集合对象
+	final void setArray(Object[] a) {
+        array = a;
+    }
 
-   	// 将原对象引用指向新集合对象
-   	final void setArray(Object[] a) {
-           array = a;
-       }
+	final Object[] getArray() {
+        return array;
+    }
+}
+```
 
-   	final Object[] getArray() {
-           return array;
-       }
-   }
-   ```
+#### 值传递和引用传递
 
-   #### 值传递和引用传递
+八种基本数据类型都存在于栈中, 方法间相互调用, 基本类型传递为值传递, 不会改变原来的值;
 
-   八种基本数据类型都存在于栈中, 方法间相互调用, 基本类型传递为值传递, 不会改变原来的值;
+引用类型在方法之间调用传递为引用传递, 对象中属性值的改变会影响到原来的对象;
 
-   引用类型在方法之间调用传递为引用传递, 对象中属性值的改变会影响到原来的对象;
+String 存在于常量池中
 
-   String 存在于常量池中
+```java
+		String str1 = "abc"; // 这种直接赋值, 会先判断常量池中是否存在 abc, 存在复用, 不存在新建
+		String str2 = new String("abc"); // 这种 new 的方式, 属于新建一个对象, 存在于堆中
+		System.out.println(str1 == str2);// 比较的是内存地址
+		String str3 = new String("abc");
+		System.out.println(str3 == str2); // 比较的是内存地址
+		
+```
 
-   ```java
-   		String str1 = "abc"; // 这种直接赋值, 会先判断常量池中是否存在 abc, 存在复用, 不存在新建
-   		String str2 = new String("abc"); // 这种 new 的方式, 属于新建一个对象, 存在于堆中
-   		System.out.println(str1 == str2);// 比较的是内存地址
-   		String str3 = new String("abc");
-   		System.out.println(str3 == str2); // 比较的是内存地址
-   		
-   ```
+#### java锁之公平和非公平锁
 
-   #### java锁之公平和非公平锁
+ReentrantLock(默认非公平锁): 可重入锁, 公平所, 非公平锁
 
-   ReentrantLock(默认非公平锁): 可重入锁, 公平所, 非公平锁
+######lock(公平锁)
 
-   ```java
-   public class ReentrantLockDemo {
-       try {
-           // 公平锁
-           ReentrantLock rl = new ReentrantLock(true);
-           rl.lock();
+```java
+public class ReentrantLockDemo {
+    try {
+        // 公平锁
+        ReentrantLock rl = new ReentrantLock(true);
         rl.lock();
-           // 能够更请清楚看整个执行流程
-   		TimeUnit.SECONDS.sleep(60);
-           new Thread(() -> {
-             rl.lock();
-           }, "aaa").start();
-           TimeUnit.SECONDS.sleep(60);
-           new Thread(() -> {
-             rl.lock();
-        }, "bbb").start();
-       } catch (Exception e){
-        e.printStackTrace();
-       }	
-   }
-   ```
-   
-   #####lock
-   
-   ~~~java
-   public class ReentrantLock implements Lock, java.io.Serializable { 
-     	// 初始化
-   	public ReentrantLock(boolean fair) {
-           sync = fair ? new FairSync() : new NonfairSync();
-       }
-     
-     	// 将 Sync 和 AbstractQueuedSynchronizer 的代码合并了一起说明
-     	static final class FairSync extends Sync extends AbstractQueuedSynchronizer {
-         	// 初始化, 用来做线程获取锁的判断
-         	private static final Unsafe unsafe = Unsafe.getUnsafe();
-        	// 
-         	final void lock() {
-               acquire(1);
-           }
-         	public final void acquire(int arg) {
-             	// !tryAcquire(arg) 第一次进来, 为true 
-             	// 当之前任务没有完成, 后面又有任务来获取锁, 
-             	// acquireQueued(addWaiter(Node.EXCLUSIVE), arg)) 添加到队列中
-           	if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
-               	selfInterrupt();
-       	}
-         	// 尝试获取锁
-         	protected final boolean tryAcquire(int acquires) {
-               final Thread current = Thread.currentThread();
-             	// 第一次默认值为 0
-               int c = getState();
-               if (c == 0) {
-                 	// 第一个任务, hasQueuedPredecessors() 返回false
-                 	// compareAndSetState(0, acquires)) 成功获取锁, 并改变 state 值为 1
-                   if (!hasQueuedPredecessors() &&
-                       compareAndSetState(0, acquires)) {
-                       setExclusiveOwnerThread(current);
-                       // 表示获取到了锁
-                       return true;
-                   }
-               }
-             	// 当希望获取锁的任务为同一个时(在 unlock() 未执行), 也可以获取锁(可重入)
-               else if (current == getExclusiveOwnerThread()) {
-                 	// 在持有锁的任务没有完成的情况下, 每新来一个任务, nextc 都会加 1
-                   int nextc = c + acquires;
-                   if (nextc < 0)
-                       throw new Error("Maximum lock count exceeded");
-                   setState(nextc);
+     rl.lock();
+        // 能够更请清楚看整个执行流程
+		TimeUnit.SECONDS.sleep(60);
+        new Thread(() -> {
+          rl.lock();
+        }, "aaa").start();
+        TimeUnit.SECONDS.sleep(60);
+        new Thread(() -> {
+          rl.lock();
+     }, "bbb").start();
+    } catch (Exception e){
+     e.printStackTrace();
+    }	
+}
+```
+
+~~~java
+public class ReentrantLock implements Lock, java.io.Serializable { 
+  	// 初始化
+	public ReentrantLock(boolean fair) {
+        sync = fair ? new FairSync() : new NonfairSync();
+    }
+  
+  	// 将 Sync 和 AbstractQueuedSynchronizer 的代码合并了一起说明
+  	static final class FairSync extends Sync extends AbstractQueuedSynchronizer {
+      	// 初始化, 用来做线程获取锁的判断
+      	private static final Unsafe unsafe = Unsafe.getUnsafe();
+     	// 
+      	final void lock() {
+            acquire(1);
+        }
+      	public final void acquire(int arg) {
+          	// !tryAcquire(arg) 第一次进来, 为true 
+          	// 当之前任务没有完成, 后面又有任务来获取锁, 
+          	// acquireQueued(addWaiter(Node.EXCLUSIVE), arg)) 添加到队列中
+        	if (!tryAcquire(arg) && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+            	selfInterrupt();
+    	}
+      	// 尝试获取锁
+      	protected final boolean tryAcquire(int acquires) {
+            final Thread current = Thread.currentThread();
+          	// 第一次默认值为 0
+            int c = getState();
+            if (c == 0) {
+              	// 第一个任务, hasQueuedPredecessors() 返回false
+              	// compareAndSetState(0, acquires)) 成功获取锁, 并改变 state 值为 1
+                if (!hasQueuedPredecessors() &&
+                    compareAndSetState(0, acquires)) {
+                    setExclusiveOwnerThread(current);
+                    // 表示获取到了锁
+                    return true;
+                }
+            }
+          	// 当希望获取锁的任务为同一个时(在 unlock() 未执行), 也可以获取锁(可重入)
+            else if (current == getExclusiveOwnerThread()) {
+              	// 在持有锁的任务没有完成的情况下, 每新来一个任务, nextc 都会加 1
+                int nextc = c + acquires;
+                if (nextc < 0)
+                    throw new Error("Maximum lock count exceeded");
+                setState(nextc);
+             return true;
+            }
+         // 没有获取锁, 需要将当前任务添加到等待队列中
+            return false;
+        }
+        // 将等待任务添加到 AQS 队列
+        private Node addWaiter(Node mode) {
+            Node node = new Node(Thread.currentThread(), mode);
+            // Try the fast path of enq; backup to full enq on failure
+            Node pred = tail;
+            if (pred != null) {
+                node.prev = pred;
+                // 设置尾部的元素, 将后面新加的元素
+                if (compareAndSetTail(pred, node)) {
+                    pred.next = node;
+                    return node;
+                }
+            }
+          	// 在锁被占用, 后面第一个线程进入, 初始化 node
+            enq(node);
+            return node;
+    	}
+        // 初始化 queue 中第一个 node
+      	// Node t = tail; tail = head; node.prev = t; t.next = node; 循环指引
+        private Node enq(final Node node) {
+            for (;;) {
+                Node t = tail;
+                if (t == null) { // Must initialize
+                  	// 初始化头节点
+                    if (compareAndSetHead(new Node()))
+                      	// head = new Node();
+                        tail = head;
+                } else {
+                    // 实际添加元素, node 记录的为当前线程
+                    node.prev = t;
+                  	// 第二个获取锁的线程在队列中, 既是头节点也是尾节点(在后面线程添加进入队列时, 由于循环引用)
+                    if (compareAndSetTail(t, node)) {
+                        t.next = node;
+                        return t;
+                    }
+                }
+            }
+        }
+      
+        final boolean acquireQueued(final Node node, int arg) {
+            boolean failed = true;
+            try {
+                boolean interrupted = false;
+                for (;;) {
+                    final Node p = node.predecessor();
+                    if (p == head && tryAcquire(arg)) {
+                        setHead(node);
+                        p.next = null; // help GC
+                        failed = false;
+                        return interrupted;
+                    }
+                    if (shouldParkAfterFailedAcquire(p, node) &&
+                        parkAndCheckInterrupt())
+                        interrupted = true;
+                }
+            } finally {
+                if (failed)
+                    cancelAcquire(node);
+            }
+      	}
+      	// 返回前个节点
+      	final Node predecessor() throws NullPointerException {
+            Node p = prev;
+            if (p == null)
+                throw new NullPointerException();
+            else
+                return p;
+        }
+        private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+            int ws = pred.waitStatus;
+            if (ws == Node.SIGNAL)
+                /*
+                 * This node has already set status asking a release
+                 * to signal it, so it can safely park.
+                 */
                 return true;
-               }
-            // 没有获取锁, 需要将当前任务添加到等待队列中
-               return false;
-           }
-           // 将等待任务添加到 AQS 队列
-           private Node addWaiter(Node mode) {
-               Node node = new Node(Thread.currentThread(), mode);
-               // Try the fast path of enq; backup to full enq on failure
-               Node pred = tail;
-               if (pred != null) {
-                   node.prev = pred;
-                   // 设置尾部的元素, 将后面新加的元素
-                   if (compareAndSetTail(pred, node)) {
-                       pred.next = node;
-                       return node;
-                   }
-               }
-               enq(node);
-               return node;
-       	}
-           // 初始化 queue 中第一个 node
-           private Node enq(final Node node) {
-               for (;;) {
-                   Node t = tail;
-                   if (t == null) { // Must initialize
-                       if (compareAndSetHead(new Node()))
-                           tail = head;
-                   } else {
-                       // 实际添加元素
-                       node.prev = t;
-                       if (compareAndSetTail(t, node)) {
-                           t.next = node;
-                           return t;
-                       }
-                   }
-               }
-           }
-       }
-   }
-   ~~~
-   
-   可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码, 在同一线程在外层方法获得锁的时候, 再进入内层方法会自动获得锁; 也就是说线程可以进入任何一个它已经获得锁所同步的代码块
-   
-   ```java
-   public void sync method01 (){
-     	// 同一线程获得方法 method01 的锁, 将自动获得 method02 方法的锁
-   method02();
-   }
-   public void sync method02 (){
-     
-   }
-   ```
+            if (ws > 0) {
+                /*
+                 * Predecessor was cancelled. Skip over predecessors and
+                 * indicate retry.
+                 */
+                do {
+                    node.prev = pred = pred.prev;
+                } while (pred.waitStatus > 0);
+                pred.next = node;
+            } else {
+                /*
+                 * waitStatus must be 0 or PROPAGATE.  Indicate that we
+                 * need a signal, but don't park yet.  Caller will need to
+                 * retry to make sure it cannot acquire before parking.
+                 */
+                compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+            }
+            return false;
+      	}
+    }
+}
+~~~
+
+###### lock(非公平锁)
+
+非公平锁流程: 
+
+① compareAndSetState(0, 1) 判断是否可以获取锁, 成功获取锁, 并设置为独占锁, 
+
+② 如果失败, 会再次尝试去获取锁, 在再次获取锁的过程中, 如果前面线程释放了锁, 这会导致前面排队的线程继续排队, 而后到线程却获取到了锁(**非公平**). 
+
+③ 如果失败,则进入等待队列
+
+```java
+public class ReentrantLockDemo {
+    try {
+        // 公平锁
+        ReentrantLock rl = new ReentrantLock(false);
+        rl.lock();
+     rl.lock();
+        // 能够更请清楚看整个执行流程
+		TimeUnit.SECONDS.sleep(60);
+        new Thread(() -> {
+          rl.lock();
+        }, "aaa").start();
+        TimeUnit.SECONDS.sleep(60);
+        new Thread(() -> {
+          rl.lock();
+     }, "bbb").start();
+    } catch (Exception e){
+     e.printStackTrace();
+    }	
+}
+```
+
+```java
+ static final class NonfairSync extends Sync extends AbstractQueuedSynchronizer {
+   	final void lock() {
+      	// 非公平锁, 直接去获取锁
+      	if (compareAndSetState(0, 1))
+        	setExclusiveOwnerThread(Thread.currentThread());
+      	else
+          	// 失败, 添加到队列, 
+          	// 再次尝试去获取锁, “非公平”即体现在这里，如果占用锁的线程刚释放锁，state置为0，而排队等待锁的线程还未唤醒时，新来的线程就直接抢占了该锁，那么就“插队”了
+          	//后面逻辑和公平锁一致
+        	acquire(1);
+    }
+ }
+```
+
+可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码, 在同一线程在外层方法获得锁的时候, 再进入内层方法会自动获得锁; 也就是说线程可以进入任何一个它已经获得锁所同步的代码块
+
+```java
+public void sync method01 (){
+  	// 同一线程获得方法 method01 的锁, 将自动获得 method02 方法的锁
+method02();
+}
+public void sync method02 (){
+  
+}
+```
 ```
    
    公平锁: 指多个线程按照申请锁的顺序获取锁; **保证有序性**
@@ -468,7 +576,7 @@ public ArrayBlockingQueue(int capacity,
 
 
 
-- - 
+- - ​
 
 ##### 线程池
 

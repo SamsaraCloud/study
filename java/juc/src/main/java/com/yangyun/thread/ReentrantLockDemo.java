@@ -26,11 +26,11 @@ public class ReentrantLockDemo {
             ReentrantLock rl = new ReentrantLock(true);
             rl.lock();
 //        rl.lock();
-            TimeUnit.SECONDS.sleep(60);
+            TimeUnit.SECONDS.sleep(20);
             new Thread(() -> {
                 rl.lock();
             }, "aaa").start();
-            TimeUnit.SECONDS.sleep(60);
+            TimeUnit.SECONDS.sleep(60 * 5);
             new Thread(() -> {
                 rl.lock();
             }, "bbb").start();
