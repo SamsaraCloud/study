@@ -271,6 +271,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
   
   	// 将 Sync 和 AbstractQueuedSynchronizer 的代码合并了一起说明
   	static final class FairSync extends Sync extends AbstractQueuedSynchronizer {
+      	// 当前节点超时或者终端, 该节点被取消, 节点永远不会改变状态, 并且取消该节点的线程永远不会再次阻塞
+      	static final int CANCELLED =  1;
       	// 初始化, 用来做线程获取锁的判断
       	private static final Unsafe unsafe = Unsafe.getUnsafe();
      	// 
