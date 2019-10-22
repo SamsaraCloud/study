@@ -29,11 +29,19 @@ public class ReentrantLockDemo {
             TimeUnit.SECONDS.sleep(20);
             new Thread(() -> {
                 rl.lock();
+                System.out.println(Thread.currentThread().getName());
             }, "aaa").start();
-            TimeUnit.SECONDS.sleep(60 * 5);
+            TimeUnit.SECONDS.sleep(30);
             new Thread(() -> {
                 rl.lock();
+                System.out.println(Thread.currentThread().getName());
             }, "bbb").start();
+            TimeUnit.SECONDS.sleep(30);
+            new Thread(() -> {
+                rl.lock();
+                System.out.println(Thread.currentThread().getName());
+            }, "ccc").start();
+            rl.unlock();
 //        Phone phone = new Phone();
 //        new Thread (() -> {
 //            try {

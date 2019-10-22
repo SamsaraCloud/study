@@ -273,6 +273,12 @@ public class ReentrantLock implements Lock, java.io.Serializable {
   	static final class FairSync extends Sync extends AbstractQueuedSynchronizer {
       	// 当前节点超时或者终端, 该节点被取消, 节点永远不会改变状态, 并且取消该节点的线程永远不会再次阻塞
       	static final int CANCELLED =  1;
+      	// 等待状态值, 后续线程需要暂停
+      	static final int SIGNAL = -1;
+      	// 表示线程处于等待状态, 当前线程处于条件队列行 Condition
+      	static final int CONDITION = -2;
+      	// 表示下一个对象的默认状态值应该无条件传递下去
+      	static final int PROPAGATE = -3;
       	// 初始化, 用来做线程获取锁的判断
       	private static final Unsafe unsafe = Unsafe.getUnsafe();
      	// 
@@ -314,14 +320,15 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             return false;
         }
         // 将等待任务添加到 AQS 队列
-        private Node addWaiter(Node mode) {
+        private Node addWaiter(Node mode) {// mode 为当前来获取锁的线程
             Node node = new Node(Thread.currentThread(), mode);
             // Try the fast path of enq; backup to full enq on failure
             Node pred = tail;
             if (pred != null) {
                 node.prev = pred;
-                // 设置尾部的元素, 将后面新加的元素
+                // 设置尾部的元素, 将当前来获取锁的线程添加到队尾
                 if (compareAndSetTail(pred, node)) {
+                  	// 上个元素的 next 指向当前获取锁的线程
                     pred.next = node;
                     return node;
                 }
@@ -353,10 +360,13 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         }
       
         final boolean acquireQueued(final Node node, int arg) {
-            boolean failed = true;
+            boolean failed = true;// 标记是否获取锁
             try {
+              	// 标记线程是否被中断过
                 boolean interrupted = false;
+              	// 从队尾开始往前, 尝试去获取锁
                 for (;;) {
+                  	// 当前节点的前置节点
                     final Node p = node.predecessor();
                     if (p == head && tryAcquire(arg)) {
                         setHead(node);
@@ -365,6 +375,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                         return interrupted;
                     }
                     if (shouldParkAfterFailedAcquire(p, node) &&
+                        // 检查当前线程是否中断
                         parkAndCheckInterrupt())
                         interrupted = true;
                 }
@@ -381,32 +392,69 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             else
                 return p;
         }
+      	
+      	// 判断当前节点获取锁失败后是否需要挂起
+      	// node 当前线程, pred 当前线程的前置节点
         private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+          	// 当前置节点状态和当前线程状态一致时(等待), 当前线程需要挂起
             int ws = pred.waitStatus;
             if (ws == Node.SIGNAL)
-                /*
-                 * This node has already set status asking a release
-                 * to signal it, so it can safely park.
-                 */
+                
                 return true;
             if (ws > 0) {
-                /*
-                 * Predecessor was cancelled. Skip over predecessors and
-                 * indicate retry.
-                 */
+                // 如果前置节点为 cancel 时
                 do {
+                  	// 从队尾遍历, 寻找第一个不为 cancel 的线程作为当前线程的新的前置节点
                     node.prev = pred = pred.prev;
                 } while (pred.waitStatus > 0);
                 pred.next = node;
             } else {
-                /*
-                 * waitStatus must be 0 or PROPAGATE.  Indicate that we
-                 * need a signal, but don't park yet.  Caller will need to
-                 * retry to make sure it cannot acquire before parking.
-                 */
+                //waitStatus must be 0 or PROPAGATE.
+              	// 新的前置节点的状态的改变
                 compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
             }
             return false;
+      	}
+      	// 取消正在进行的尝试获取
+        private void cancelAcquire(Node node) {
+            // Ignore if node doesn't exist
+            if (node == null)
+                return;
+
+            node.thread = null;
+
+            // Skip cancelled predecessors
+            Node pred = node.prev;
+          	// 重新指向新的前置节点
+            while (pred.waitStatus > 0)
+                node.prev = pred = pred.prev;
+
+            Node predNext = pred.next;
+
+            node.waitStatus = Node.CANCELLED;
+
+            // If we are the tail, remove ourselves.
+          	// 如果当前线程为尾部节点, 则 next 为null
+            if (node == tail && compareAndSetTail(node, pred)) {
+                compareAndSetNext(pred, predNext, null);
+            } else {
+                // If successor needs signal, try to set pred's next-link
+                // so it will get one. Otherwise wake it up to propagate.
+                int ws;
+              	// 如果不为头部节点, 并且状态为 signal, 设置前置节点状态为 signal
+                if (pred != head &&
+                    ((ws = pred.waitStatus) == Node.SIGNAL ||
+                     (ws <= 0 && compareAndSetWaitStatus(pred, ws, Node.SIGNAL))) &&
+                    pred.thread != null) {
+                    Node next = node.next;
+                    if (next != null && next.waitStatus <= 0)
+                        compareAndSetNext(pred, predNext, next);
+                } else {
+                    unparkSuccessor(node);
+                }
+
+                node.next = node; // help GC
+            }
       	}
     }
 }
