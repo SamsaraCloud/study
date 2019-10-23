@@ -271,6 +271,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
   
   	// 将 Sync 和 AbstractQueuedSynchronizer 的代码合并了一起说明
   	static final class FairSync extends Sync extends AbstractQueuedSynchronizer {
+      	// 重入次数
+      	private volatile int state;
       	// 当前节点超时或者终端, 该节点被取消, 节点永远不会改变状态, 并且取消该节点的线程永远不会再次阻塞
       	static final int CANCELLED =  1;
       	// 等待状态值, 后续线程需要暂停
@@ -309,7 +311,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             }
           	// 当希望获取锁的任务为同一个时(在 unlock() 未执行), 也可以获取锁(可重入)
             else if (current == getExclusiveOwnerThread()) {
-              	// 在持有锁的任务没有完成的情况下, 每新来一个任务, nextc 都会加 1
+              	// 记录被重入的次数
                 int nextc = c + acquires;
                 if (nextc < 0)
                     throw new Error("Maximum lock count exceeded");
@@ -343,7 +345,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             for (;;) {
                 Node t = tail;
                 if (t == null) { // Must initialize
-                  	// 初始化头节点
+                  	// 初始化头节点, node 的 next 才是真正指向当前来获取的线程,
+                  	// 而 waitStatus 记录的也是 next 的状态值
+                  	// 在 unlock 中可以发现, 每次唤醒的都是 node 的 next,而且 waitStatus 却是更具当前node 的 waitStatus 来判断
                     if (compareAndSetHead(new Node()))
                       	// head = new Node();
                         tail = head;
@@ -358,7 +362,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                 }
             }
         }
-      
+      	// 入队列, 并将当前线程的 prev 的状态修改为 SIGNAL
         final boolean acquireQueued(final Node node, int arg) {
             boolean failed = true;// 标记是否获取锁
             try {
@@ -375,7 +379,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                         return interrupted;
                     }
                     if (shouldParkAfterFailedAcquire(p, node) &&
-                        // 检查当前线程是否中断
+                        // 检查当前线程是否中断过
                         parkAndCheckInterrupt())
                         interrupted = true;
                 }
@@ -409,8 +413,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                 } while (pred.waitStatus > 0);
                 pred.next = node;
             } else {
-                //waitStatus must be 0 or PROPAGATE.
-              	// 新的前置节点的状态的改变
+                // waitStatus must be 0 or PROPAGATE.
+              	// 当前节点的前置节点的状态的改变
                 compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
             }
             return false;
@@ -476,7 +480,7 @@ public class ReentrantLockDemo {
         // 公平锁
         ReentrantLock rl = new ReentrantLock(false);
         rl.lock();
-     rl.lock();
+     	rl.lock();
         // 能够更请清楚看整个执行流程
 		TimeUnit.SECONDS.sleep(60);
         new Thread(() -> {
@@ -507,6 +511,73 @@ public class ReentrantLockDemo {
  }
 ```
 
+###### unlock
+
+```java
+   	public static void main(String[] args) {  
+    	ReentrantLock rl = new ReentrantLock(true);
+        rl.lock();
+        rl.lock();
+        TimeUnit.SECONDS.sleep(20);
+        new Thread(() -> {
+          rl.lock();
+          System.out.println(Thread.currentThread().getName());
+        }, "aaa").start();
+        TimeUnit.SECONDS.sleep(5);
+        rl.unlock();
+    }
+```
+
+```java
+    public void unlock() {
+        sync.release(1);
+    }
+	
+	// 是否成功释放锁
+    public final boolean release(int arg) {
+        if (tryRelease(arg)) {
+            Node h = head;
+            if (h != null && h.waitStatus != 0)
+                unparkSuccessor(h);
+            return true;
+        }
+        return false;
+    }
+
+    protected final boolean tryRelease(int releases) {
+      	// getState 获取被重入次数
+        int c = getState() - releases;
+        if (Thread.currentThread() != getExclusiveOwnerThread())
+          throw new IllegalMonitorStateException();
+        boolean free = false;
+        if (c == 0) {
+          free = true;
+          // 成功, 清空独占线程
+          setExclusiveOwnerThread(null);
+        }
+		// 更新值
+        setState(c);
+        return free;
+    }
+
+	private void unparkSuccessor(Node node) {
+        int ws = node.waitStatus;
+        if (ws < 0)
+            compareAndSetWaitStatus(node, ws, 0);
+		// 释放的 next 节点, 前面 lock 有说明为啥是 next
+        Node s = node.next;
+        if (s == null || s.waitStatus > 0) {
+            s = null;
+            for (Node t = tail; t != null && t != node; t = t.prev)
+                if (t.waitStatus <= 0)
+                    s = t;
+        }
+        if (s != null)
+          	// 唤醒
+            LockSupport.unpark(s.thread);
+    }
+```
+
 可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码, 在同一线程在外层方法获得锁的时候, 再进入内层方法会自动获得锁; 也就是说线程可以进入任何一个它已经获得锁所同步的代码块
 
 ```java
@@ -518,7 +589,7 @@ public void sync method02 (){
   
 }
 ```
-```
+```java
    
    公平锁: 指多个线程按照申请锁的顺序获取锁; **保证有序性**
    

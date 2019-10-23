@@ -25,22 +25,23 @@ public class ReentrantLockDemo {
         try {
             ReentrantLock rl = new ReentrantLock(true);
             rl.lock();
-//        rl.lock();
-            TimeUnit.SECONDS.sleep(20);
+//            rl.lock();
+//            TimeUnit.SECONDS.sleep(15);
             new Thread(() -> {
                 rl.lock();
                 System.out.println(Thread.currentThread().getName());
             }, "aaa").start();
-            TimeUnit.SECONDS.sleep(30);
+//            TimeUnit.SECONDS.sleep(80);
             new Thread(() -> {
                 rl.lock();
                 System.out.println(Thread.currentThread().getName());
             }, "bbb").start();
-            TimeUnit.SECONDS.sleep(30);
+//            TimeUnit.SECONDS.sleep(100);
             new Thread(() -> {
                 rl.lock();
                 System.out.println(Thread.currentThread().getName());
             }, "ccc").start();
+            TimeUnit.SECONDS.sleep(5);
             rl.unlock();
 //        Phone phone = new Phone();
 //        new Thread (() -> {
