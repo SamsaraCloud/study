@@ -1,5 +1,8 @@
 package com.yangyun.thread;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 /**
  * @ClassName BlockingQueueDemo
  * @Description: 阻塞队列
@@ -8,4 +11,8 @@ package com.yangyun.thread;
  * @Version 1.0
  **/
 public class BlockingQueueDemo {
+
+    public static void main(String[] args) {
+        BlockingQueue<String> queue = new ArrayBlockingQueue<String>(5, false);
+    }
 }

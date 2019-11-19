@@ -2,6 +2,7 @@ package com.yangyun.thread;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -15,20 +16,58 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  **/
 public class ReadWriteLockDemo {
     public static void main(String[] args) throws InterruptedException {
-        MyCache cache = new MyCache();
-        for (int i = 1; i <= 5; i++) {
-            final int a = i;
+        try {
+            ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
+            ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+            ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+//            writeLock.lock();
+            writeLock.lock();
+//            TimeUnit.SECONDS.sleep(15);
+//            readLock.lock();
+            TimeUnit.SECONDS.sleep(15);
             new Thread(() -> {
-                cache.put(String.valueOf(a), a);
-            }, String.valueOf(i)).start();
-        }
+                readLock.lock();
+            }, "AAA").start();
 
-
-        for (int i = 1; i <= 5; i++) {
-            final int a = i;
+            TimeUnit.SECONDS.sleep(140);
             new Thread(() -> {
-                cache.get(String.valueOf(a));
-            }, String.valueOf(i)).start();
+                readLock.lock();
+            }, "BBB").start();
+            TimeUnit.SECONDS.sleep(10);
+            System.out.println("此时正在BBB线程");
+            TimeUnit.SECONDS.sleep(20);
+            System.out.println("执行 writeLock 的 unlock 方法");
+            writeLock.unlock();
+
+            TimeUnit.SECONDS.sleep(140);
+            System.out.println("执行 getQueueLength 方法");
+            System.out.println(lock.getQueueLength());
+//
+//            TimeUnit.SECONDS.sleep(10);
+//            new Thread(() -> {
+//                readLock.lock();
+//
+//            }, "CCC").start();
+//            TimeUnit.SECONDS.sleep(10);
+//            int queueLength = lock.getQueueLength();
+//            System.out.println(queueLength);
+//        MyCache cache = new MyCache();
+//        for (int i = 1; i <= 5; i++) {
+//            final int a = i;
+//            new Thread(() -> {
+//                cache.put(String.valueOf(a), a);
+//            }, String.valueOf(i)).start();
+//        }
+//
+//
+//        for (int i = 1; i <= 5; i++) {
+//            final int a = i;
+//            new Thread(() -> {
+//                cache.get(String.valueOf(a));
+//            }, String.valueOf(i)).start();
+//        }
+        } catch (Exception e){
+
         }
     }
 }
@@ -47,7 +86,8 @@ class MyCache {
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public void put (String key, Object value){
-        lock.writeLock().lock();
+        ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+        writeLock.lock();
 
         try {
             Thread thread = Thread.currentThread();

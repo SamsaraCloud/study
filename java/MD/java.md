@@ -578,6 +578,8 @@ public class ReentrantLockDemo {
     }
 ```
 
+######可重入锁(递归锁)
+
 可重入锁(递归锁): 同一线程外层函数获得锁之后, 内层递归函数仍然能获得该锁的代码, 在同一线程在外层方法获得锁的时候, 再进入内层方法会自动获得锁; 也就是说线程可以进入任何一个它已经获得锁所同步的代码块
 
 ```java
@@ -664,6 +666,173 @@ ReentrantLock synchronized 为独占锁
 共享锁(读锁): 同意时刻可以有多个线程同时操作资源类
 
 互斥锁(读写, 写读, 写写 互斥)
+
+test
+
+```java
+	public static void main(String[] args) throws InterruptedException {
+        try {
+            ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
+            ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+            ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+          	// 当该锁被另一个写锁持有, 那么获取失败, 后面的线程都会进入到等待队列中
+            writeLock.lock();
+            TimeUnit.SECONDS.sleep(15);
+            readLock.lock(); 
+            TimeUnit.SECONDS.sleep(100);
+            new Thread(() -> {
+				// 这里这里再去获取锁失败
+                readLock.lock();
+            }, "AAA").start();
+
+            TimeUnit.SECONDS.sleep(40);
+            new Thread(() -> {
+                readLock.lock();
+            }, "BBB").start();
+
+            TimeUnit.SECONDS.sleep(80);
+            new Thread(() -> {
+                readLock.lock();
+            }, "CCC").start();
+        } catch (Exception e){
+
+        }
+	}
+```
+
+
+
+```java
+// 读写锁
+public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializable {
+  	// 默认使用非公平锁, 可通过传入true 或 false 来使用公平或非公平锁
+	ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair); 
+  	
+  	private final ReentrantReadWriteLock.ReadLock readerLock;
+  	private final ReentrantReadWriteLock.WriteLock writerLock;
+  
+    public ReentrantReadWriteLock(boolean fair) {
+        sync = fair ? new FairSync() : new NonfairSync();
+        readerLock = new ReadLock(this);
+        writerLock = new WriteLock(this);
+    }
+  
+  	// 写锁, 为独占锁, 一次只有一个线程能操作资源类, 
+  	public static class WriteLock implements Lock, java.io.Serializable {
+      	private final Sync sync;
+      
+      	protected WriteLock(ReentrantReadWriteLock lock) {
+            sync = lock.sync;
+        }
+      
+      	public void lock() {
+          	// 根据 ReentrantReadWriteLock(fair) 初始化, fair 来判断使用公平或非公平锁
+          	// acquire(1) 间接调用的就是 ReentrantLock 的 acquire 方法
+            sync.acquire(1);
+        }
+    }
+  
+  	// 读锁
+  	public static class ReadLock implements Lock, java.io.Serializable {
+      	private final Sync sync;
+      
+      	protected ReadLock(ReentrantReadWriteLock lock) {
+            sync = lock.sync;
+        }
+      
+      	public void lock() {
+          	// 公平锁调用
+            sync.acquireShared(1);
+        }
+    }
+  	
+  	public final void acquireShared(int arg) {
+      	// readlock 调用, 尝试获取锁
+        if (tryAcquireShared(arg) < 0)
+            doAcquireShared(arg);
+    }
+  	
+  	
+  	protected final int tryAcquireShared(int unused) {
+    	Thread current = Thread.currentThread();
+        int c = getState();
+      	// 1. 当该锁被另一个写锁持有, 那么获取失败
+        if (exclusiveCount(c) != 0 &&
+            getExclusiveOwnerThread() != current)
+          return -1;
+        int r = sharedCount(c);
+        if (!readerShouldBlock() &&
+            r < MAX_COUNT && // 65535
+            compareAndSetState(c, c + SHARED_UNIT)) {
+          if (r == 0) {
+            firstReader = current;
+            firstReaderHoldCount = 1;
+          } else if (firstReader == current) {
+            firstReaderHoldCount++;
+          } else {
+            HoldCounter rh = cachedHoldCounter;
+            if (rh == null || rh.tid != getThreadId(current))
+              cachedHoldCounter = rh = readHolds.get();
+            else if (rh.count == 0)
+              readHolds.set(rh);
+            rh.count++;
+          }
+          return 1;
+        }
+        return fullTryAcquireShared(current); 
+    }
+  
+  	// 已共享不中断的方式执行
+    private void doAcquireShared(int arg) {
+      	// 添加线程到排队队列, 代码和公平非公平锁一致, 都会将后面进来的线程指向上个 node 的 next
+      	// 初始化 node waitStatus 都为 0
+      	// 对于第一次进入队列的线程会初始化一个 waitStatus 为 0 空的node, 而它的next 会指向第一个进入的线程, 后面每次新来一个成员,都会添加到上个node 的next并且 waitStatus 都为 0
+        final Node node = addWaiter(Node.SHARED);
+        boolean failed = true;
+        try {
+          boolean interrupted = false;
+          for (;;) {
+            final Node p = node.predecessor();
+            if (p == head) {
+              // 因为程序运行了一段时间, 前面获取锁的线程的状态会发生改变
+              int r = tryAcquireShared(arg);
+              if (r >= 0) {
+                // 当写锁执行完释放锁, 后面的读锁可以开始执行
+                // 释放 node, 将所有node节点置为null
+                setHeadAndPropagate(node, r);
+                p.next = null; // help GC
+                if (interrupted)
+                  selfInterrupt();
+                failed = false;
+                return;
+              }
+            }	
+            
+            // p 为当前 node 的 pred node, node 为当前线程所在的node
+           	// shouldParkAfterFailedAcquire 检查和更新当前线程的 pred 状态值, 因为waitStatus初始化都为 0, 第一次 shouldParkAfterFailedAcquire 为 false, 但是在 shouldParkAfterFailedAcquire 方法里面的 waitStatus 的值已经被更新为 SIGNAL (-1), 所以第二次循环到来, 执行 parkAndCheckInterrupt 将当前线程挂起
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+              interrupted = true;
+          }
+        } finally {
+          if (failed)
+            cancelAcquire(node);
+        }
+    }
+  	private void setHeadAndPropagate(Node node, int propagate) {
+        Node h = head; // Record old head for check below
+        setHead(node);
+      	if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0) {
+            Node s = node.next;
+            if (s == null || s.isShared())
+                doReleaseShared();
+        }
+    }
+}
+```
+
+
 
 ##### 阻塞队列
 
@@ -1449,6 +1618,10 @@ G1收集器下的Young GC
 -XX:G1ReservePercent=n 设置作为空闲空间的预留内存百分比, 降低目标空间溢出的粉线, 默认 10%
 
 **java -server jvm参数 -jar xxx.jar**
+
+
+
+
 
 
 
