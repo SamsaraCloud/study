@@ -273,13 +273,13 @@ public class ReentrantLock implements Lock, java.io.Serializable {
   	static final class FairSync extends Sync extends AbstractQueuedSynchronizer {
       	// 重入次数
       	private volatile int state;
-      	// 当前节点超时或者终端, 该节点被取消, 节点永远不会改变状态, 并且取消该节点的线程永远不会再次阻塞
+      	// 当前节点超时或者终端, 该节点被取消, 节点永远不会改变状态, 并且取消该节点的线程永远不会再次阻塞(被取消的线程状态值)
       	static final int CANCELLED =  1;
-      	// 等待状态值, 后续线程需要暂停
+      	// 等待状态值, 后续线程需要暂停(需要被 unpaik 唤醒)
       	static final int SIGNAL = -1;
-      	// 表示线程处于等待状态, 当前线程处于条件队列行 Condition
+      	// 表示线程处于等待状态, 当前线程处于条件队列行 Condition(需要 Condition  唤醒)
       	static final int CONDITION = -2;
-      	// 表示下一个对象的默认状态值应该无条件传递下去
+      	// 表示下一个对象的默认状态值应该无条件传递下去,其他线程获取到共享锁
       	static final int PROPAGATE = -3;
       	// 初始化, 用来做线程获取锁的判断
       	private static final Unsafe unsafe = Unsafe.getUnsafe();
@@ -794,8 +794,8 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
           for (;;) {
             final Node p = node.predecessor();
             if (p == head) {
-              // 因为程序运行了一段时间, 前面获取锁的线程的状态会发生改变
-              int r = tryAcquireShared(arg);
+              // 因为程序运行了一段时间, 前面获取锁的线程的状态会发生改变, 释放了所持有的锁
+              int r = tryAcquireShared(arg); // 此时 r = 1
               if (r >= 0) {
                 // 当写锁执行完释放锁, 后面的读锁可以开始执行
                 // 释放 node, 将所有node节点置为null
@@ -821,9 +821,10 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
     }
   	private void setHeadAndPropagate(Node node, int propagate) {
         Node h = head; // Record old head for check below
-        setHead(node);
+        setHead(node);// 重置 head 为当前 node, 并置空上个节点 node
       	if (propagate > 0 || h == null || h.waitStatus < 0 ||
             (h = head) == null || h.waitStatus < 0) {
+          	// node 是 tail 元素 final Node node = addWaiter(Node.SHARED);
             Node s = node.next;
             if (s == null || s.isShared())
                 doReleaseShared();
