@@ -727,7 +727,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
       
       	public void lock() {
           	// 根据 ReentrantReadWriteLock(fair) 初始化, fair 来判断使用公平或非公平锁
-          	// acquire(1) 间接调用的就是 ReentrantLock 的 acquire 方法
+          	// acquire(1) 间接调用的就是 ReentrantLock 的 acquire 方法(AQS)
             sync.acquire(1);
         }
     }
@@ -761,15 +761,19 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
             getExclusiveOwnerThread() != current)
           return -1;
         int r = sharedCount(c);
+      	// 2. 说明当前为共享锁, 所有线程都能获得执行权, readerShouldBlock() 是否存在等待队列, 不存在等待队列
         if (!readerShouldBlock() &&
             r < MAX_COUNT && // 65535
-            compareAndSetState(c, c + SHARED_UNIT)) {
+            // 没共享一次更新一次 state 值
+            compareAndSetState(c, c + SHARED_UNIT)) { // SHARED_UNIT 65536
+          // 第一个读锁
           if (r == 0) {
             firstReader = current;
             firstReaderHoldCount = 1;
           } else if (firstReader == current) {
             firstReaderHoldCount++;
           } else {
+            // readLock 计数器
             HoldCounter rh = cachedHoldCounter;
             if (rh == null || rh.tid != getThreadId(current))
               cachedHoldCounter = rh = readHolds.get();
@@ -779,7 +783,59 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
           }
           return 1;
         }
+      	// 如果执行第二步的时候, 中间有 writelock 持有锁
         return fullTryAcquireShared(current); 
+    }
+  
+    final int fullTryAcquireShared(Thread current) {
+        HoldCounter rh = null;
+        for (;;) {
+          int c = getState();
+          // 不为 0 说明又有写锁占有了锁, 此时当前线程需要入队列
+          if (exclusiveCount(c) != 0) {
+            if (getExclusiveOwnerThread() != current)
+              return -1;
+            // else we hold the exclusive lock; blocking here
+            // would cause deadlock.
+          } else if (readerShouldBlock()) {
+            // Make sure we're not acquiring read lock reentrantly
+            if (firstReader == current) {
+              // assert firstReaderHoldCount > 0;
+            } else {
+              if (rh == null) {
+                rh = cachedHoldCounter;
+                if (rh == null || rh.tid != getThreadId(current)) {
+                  rh = readHolds.get();
+                  if (rh.count == 0)
+                    readHolds.remove();
+                }
+              }
+              if (rh.count == 0)
+                return -1;
+            }
+          }
+          if (sharedCount(c) == MAX_COUNT)
+            throw new Error("Maximum lock count exceeded");
+          // 下面代码类似上面的代码, 属于 readlock 计数
+          if (compareAndSetState(c, c + SHARED_UNIT)) {
+            if (sharedCount(c) == 0) {
+              firstReader = current;
+              firstReaderHoldCount = 1;
+            } else if (firstReader == current) {
+              firstReaderHoldCount++;
+            } else {
+              if (rh == null)
+                rh = cachedHoldCounter;
+              if (rh == null || rh.tid != getThreadId(current))
+                rh = readHolds.get();
+              else if (rh.count == 0)
+                readHolds.set(rh);
+              rh.count++;
+              cachedHoldCounter = rh; // cache for release
+            }
+            return 1;
+          }
+        }
     }
   
   	// 已共享不中断的方式执行
@@ -829,6 +885,26 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
             if (s == null || s.isShared())
                 doReleaseShared();
         }
+    }
+  
+  	// 释放所有在等待队列中的 readlock, 
+  	private void doReleaseShared() {
+    	for (;;) {
+            Node h = head;
+            if (h != null && h != tail) {
+                int ws = h.waitStatus;
+                if (ws == Node.SIGNAL) {
+                    if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                        continue;            // loop to recheck cases
+                    unparkSuccessor(h);
+                }
+                else if (ws == 0 &&
+                         !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                    continue;                // loop on failed CAS
+            }
+            if (h == head)                   // loop if head changed
+                break;
+        } 
     }
 }
 ```

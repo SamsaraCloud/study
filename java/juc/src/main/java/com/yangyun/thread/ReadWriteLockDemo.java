@@ -20,10 +20,10 @@ public class ReadWriteLockDemo {
             ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
             ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
             ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-//            writeLock.lock();
             writeLock.lock();
+//            writeLock.lock();
 //            TimeUnit.SECONDS.sleep(15);
-//            readLock.lock();
+            readLock.lock();
             TimeUnit.SECONDS.sleep(15);
             new Thread(() -> {
                 readLock.lock();
@@ -33,9 +33,9 @@ public class ReadWriteLockDemo {
             new Thread(() -> {
                 readLock.lock();
             }, "BBB").start();
-            TimeUnit.SECONDS.sleep(10);
+            TimeUnit.SECONDS.sleep(60);
             System.out.println("此时正在BBB线程");
-            TimeUnit.SECONDS.sleep(20);
+            TimeUnit.SECONDS.sleep(60);
             System.out.println("执行 writeLock 的 unlock 方法");
             writeLock.unlock();
 
