@@ -1,3 +1,5 @@
+
+
 # Java 内存模型
 
 #### volatile: java 虚拟机提供的轻量级的同步机制
@@ -234,7 +236,26 @@ String 存在于常量池中
 		
 ```
 
-#### java锁之公平和非公平锁
+#### java锁之公平和非公平锁	
+
+在深入之前先了解下下ReentrantLock 和 Condition:
+重入锁ReentrantLock:
+ReentrantLock锁在同一个时间点只能被一个线程锁持有；而可重入的意思是，ReentrantLock锁，可以被单个线程多次获取。
+ReentrantLock分为“公平锁”和“非公平锁”。它们的区别体现在获取锁的机制上是否公平。“锁”是为了保护竞争资源，防止多个线程同时操作线程而出错，ReentrantLock在同一个时间点只能被一个线程获取(当某线程获取到“锁”时，其它线程就必须等待)；ReentraantLock是通过一个FIFO的等待队列来管理获取该锁所有线程的。在“公平锁”的机制下，线程依次排队获取锁；而“非公平锁”在锁是可获取状态时，不管自己是不是在队列的开头都会获取锁。
+主要方法：
+
+- lock()获得锁
+- lockInterruptibly()获得锁，但优先响应中断
+- tryLock()尝试获得锁，成功返回true,否则false，该方法不等待，立即返回
+- tryLock(long time,TimeUnit unit)在给定时间内尝试获得锁
+- unlock()释放锁
+
+Condition：await()、signal()方法分别对应之前的Object的wait()和notify()
+
+- 和重入锁一起使用
+- await()是当前线程等待同时释放锁
+- awaitUninterruptibly()不会在等待过程中响应中断
+- signal()用于唤醒一个在等待的线程，还有对应的singalAll()方法
 
 ReentrantLock(默认非公平锁): 可重入锁, 公平所, 非公平锁
 
@@ -909,11 +930,9 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
 }
 ```
 
+####阻塞队列BlockingQueue
 
-
-##### 阻塞队列
-
-BlockQueue: 不需要关心线程的阻塞和唤醒
+BlockQueue: 不需要关心线程的阻塞和唤醒, 基于 **ReentrantLock**, 不允许 null 元素
 
 
 
@@ -929,23 +948,250 @@ BlockQueue: 不需要关心线程的阻塞和唤醒
 
 ![image/4.PNG](/image/4.PNG)
 
-###### ArrayBlockingQueue
+#####ArrayBlockingQueue
+
+基于数组固定容量FIFO的有界队列, 队列的头部是在队列中存在时间最长的元素, 队列尾部是在队列中存在时间最短的元素, 新元素添加到队列尾部, 队列获取元素是从头部开始 
 
 固定容量, 默认 FIFO
 
 ```java
-// capacity 容量, fair 访问方式 true: FIFO false: 无序  c: 初始集合
-// capacity = c.size()
-public ArrayBlockingQueue(int capacity,
-                          boolean fair,
-                          Collection<? extends E> c)
+public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQueue<E>, 		 java.io.Serializable {
+	public ArrayBlockingQueue(int capacity) {
+      	// 默认使用 nonfair 策略
+  		this(capacity, false);
+  	}
+  	// 也可以指定 ReentrantLock 策略
+  	// 对于数据的存入和取出, 都是使用的同一把锁, 所以在同一时间, 只能有一端对队列进行操作
+  	public ArrayBlockingQueue(int capacity, boolean fair) {
+        if (capacity <= 0)
+            throw new IllegalArgumentException();
+        this.items = new Object[capacity];
+        lock = new ReentrantLock(fair);
+        notEmpty = lock.newCondition();
+        notFull =  lock.newCondition();
+    }
 ```
 
+######offer and put
+
+offer: 添加元素, 成功返回 true, 失败返会 false
+
+put: 当队列已满时, 再添加将**阻塞**.
+
+add 方法最终还是调用的 offer 方法
+
+```java
+public boolean offer(E e) {
+    checkNotNull(e);
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+      	// 当队列已满直接返回 false
+        if (count == items.length)
+            return false;
+        else {
+            enqueue(e);
+            return true;
+        }
+    } finally {
+        lock.unlock();
+    }
+}
+
+public void put(E e) throws InterruptedException {
+    checkNotNull(e);
+    final ReentrantLock lock = this.lock;
+  	// 该方法指向 ReentrantLock 获取锁的策略 
+  	// 1. 如果锁没有被占用, 获得锁, 技术加 1
+  	// 2. 如果是当前锁占有该锁, 则计数递增 1, 获得锁
+  	// 3. 如果锁被其他线程占用, 则当前线程将被挂起, 直到锁被释放被挂起的线程被唤醒
+    lock.lockInterruptibly();
+    try {
+      while (count == items.length)
+        // 队列已满, 阻塞
+        notFull.await();
+      // 元素入队列
+      enqueue(e);
+    } finally {
+      lock.unlock();
+    }
+}
+
+// 添加元素到队列
+private void enqueue(E x) {
+    final Object[] items = this.items;
+    items[putIndex] = x;
+    if (++putIndex == items.length)
+      // 当元素满了, 下标直接指向 0, 因为 FIFO, 添加下个元素的时候, 下标位置为 0, 如此循环
+      putIndex = 0;
+    count++;
+  	// 释放资源
+    notEmpty.signal();
+}
+```
+
+######poll and take 
+
+poll 和 offer 方法对应, take 和 put 方法对应
+
+```java
+   public E poll() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return (count == 0) ? null : dequeue();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public E take() throws InterruptedException {
+        final ReentrantLock lock = this.lock;
+        lock.lockInterruptibly();
+        try {
+            while (count == 0)
+              	// 队列为空, 阻塞
+                notEmpty.await();
+            return dequeue();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private E dequeue() {
+        // assert lock.getHoldCount() == 1;
+        // assert items[takeIndex] != null;
+        final Object[] items = this.items;
+        @SuppressWarnings("unchecked")
+        E x = (E) items[takeIndex];
+        items[takeIndex] = null;
+      	// 此处逻辑和添加元素的的相对应
+        if (++takeIndex == items.length)
+            takeIndex = 0;
+        count--;
+        if (itrs != null)
+          	// itrs 在调用 ArrayBlockingQueue.iterator() 方法时赋值
+            itrs.elementDequeued();
+        notFull.signal();
+        return x;
+    }
+```
+
+remove 最终调用的是 poll 方法
+
+######ArrayBlockingQueue.iterator()
+
+```java
+BlockingQueue<String> arry = new ArrayBlockingQueue<String>(5, false);
+arry.add("aaa");
+arry.add("bbb");
+arry.add("ccc");
+arry.add("ddd");
+arry.add("eee");
+
+// 第一种情况, 在取出元素前
+Iterator<String> before = arry.iterator();
+
+System.out.println("取出了一个元素: " + arry.remove());
+System.out.println("取出了一个元素: " + arry.remove());
+System.out.println("取出了一个元素: " + arry.remove());
+
+// 第二种情况, 在取出元素后
+Iterator<String> before = arry.iterator();
+  
+while (before.hasNext()){
+  	System.out.println(before);
+  	System.out.println(before.next());
+}
+```
+
+第一种打印
+
+```java
+java.util.concurrent.ArrayBlockingQueue$Itr@10f87f48
+aaa
+java.util.concurrent.ArrayBlockingQueue$Itr@10f87f48
+ddd
+java.util.concurrent.ArrayBlockingQueue$Itr@10f87f48
+eee
+```
+
+第二种打印
+
+```java
+java.util.concurrent.ArrayBlockingQueue$Itr@10f87f48
+ddd
+java.util.concurrent.ArrayBlockingQueue$Itr@10f87f48
+eee	
+```
+
+两种结果说明(**第一种不甚理解**)
+
+```java
+// 第一种有待日后找到答案
+// bbb 和 ccc 都已经移除了队列, 为啥 aaa 没有, 
+// 按照个人理解, 在移除元素的时候, 应该同时更新 Itr.nextItem 的值
+
+// 第二种结果很容易理解, 看ArrayBlockingQueue 源码
+public Iterator<E> iterator() {
+  return new Itr();
+}
+// 在构造方法中会直接将 ArrayBlockingQueue 赋值给 Itr
+// 并且 nextitem 的值也是为 ArrayBlockingQueue 的第一个元素
+Itr() {
+  // assert lock.getHoldCount() == 0;
+  lastRet = NONE;
+  final ReentrantLock lock = ArrayBlockingQueue.this.lock;
+  lock.lock();
+  try {
+    if (count == 0) {
+      // assert itrs == null;
+      cursor = NONE;
+      nextIndex = NONE;
+      prevTakeIndex = DETACHED;
+    } else {
+      final int takeIndex = ArrayBlockingQueue.this.takeIndex;
+      prevTakeIndex = takeIndex;
+      nextItem = itemAt(nextIndex = takeIndex);
+      cursor = incCursor(takeIndex);
+      if (itrs == null) {
+        // 直接将ArrayBlockingQueue 赋值给 Itr
+        itrs = new Itrs(this);
+      } else {
+        itrs.register(this); // in this order
+        itrs.doSomeSweeping(false);
+      }
+      prevCycles = itrs.cycles;
+      // assert takeIndex >= 0;
+      // assert prevTakeIndex == takeIndex;
+      // assert nextIndex >= 0;
+      // assert nextItem != null;
+    }
+  } finally {
+    lock.unlock();
+  }
+}
+```
+
+<https://www.jianshu.com/p/7b2f1fa616c6>
+
+<https://www.cnblogs.com/cczequn/p/8655007.html>
+
+<https://blog.csdn.net/weixin_38481963/article/details/88372920>
+
+<https://blog.csdn.net/qq_42135428/article/details/80285737>
+
+<https://www.jianshu.com/p/6ba87c7508e4>
+
+<https://www.jb51.net/article/142626.htm>
+
+<https://www.cnblogs.com/WangHaiMing/p/8798709.html>
 
 
-- - ​
 
-##### 线程池
+
+
+####线程池
 
 实现多线程几种方式
 
