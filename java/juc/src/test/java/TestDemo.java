@@ -13,10 +13,13 @@ import java.util.stream.Collectors;
 public class TestDemo {
 
     public static void main(String[] args) {
-        List<Integer> list = Arrays.asList(1,5,9,3,5,7,5);
-        Comparator<Integer> com = (a,b) -> b.compareTo(a);
-        list.stream().sorted(com).collect(Collectors.toList()).stream().forEach(s -> {
-            System.out.println(s);
-        });
+//        List<Integer> list = Arrays.asList(1,5,9,3,5,7,5);
+//        Comparator<Integer> com = (a,b) -> b.compareTo(a);
+//        list.stream().sorted(com).collect(Collectors.toList()).stream().forEach(s -> {
+//            System.out.println(s);
+//        });
+        String s = "s&";
+        String[] split = s.split("&");
+        System.out.println(split.length);
     }
 }
