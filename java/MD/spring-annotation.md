@@ -311,7 +311,7 @@ public class MainAopConfig {
 
 2. AnnotationAwareAspectJAutoProxyCreator, 实际上 是一个bean后置处理器
 
-   1. internalAutowiredAnnotationProcessor = AnnotationAwareAspectJAutoProxyCreator --> AspectJAwareAdvisorAutoProxyCreator --> AbstractAdvisorAutoProxyCreator --> AbstractAutoProxyCreator --> implements SmartInstantiationAwareBeanPostProcessor
+   1. internalAutowiredAnnotationProcessor = AnnotationAwareAspectJAutoProxyCreator --> AspectJAwareAdvisorAutoProxyCreator --> AbstractAdvisorAutoProxyCreator --> AbstractAutoProxyCreator --> implements SmartInstantiationAwareBeanPostProcessorg
 
 #### 流程
 
@@ -325,10 +325,10 @@ public class MainAopConfig {
 
    ```java
    public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
-   		this();
-   		register(annotatedClasses);
-   		refresh();
-   	}
+       this();
+       register(annotatedClasses);
+       refresh();
+   }
    ```
 
 3. registerBeanPostProcessors(beanFactory); 在所有应用bean创建之前实例化并注册BeanPostProcessor
@@ -865,4 +865,463 @@ public class MainAopConfig {
          ```
    
          ![](F:\git\study\java\MD\image\1579588470(1).png)
+   
+         #### 小总结
+   
+         1. @EnableAspectJAutoProxy 开启AOP 功能
+         2. @EnableAspectJAutoProxy 会给容器注册组件 AnnotationAwareAspectJAutoProxyCreator 后置处理器
+         3. 容器创建
+            1. registerBeanPostProcessors（）注册后置处理器；创建AnnotationAwareAspectJAutoProxyCreator对象
+            2. finishBeanFactoryInitialization（）初始化剩下的单实例bean
+               1. 创建业务逻辑组件和切面组件
+               2. AnnotationAwareAspectJAutoProxyCreator 拦截组件的创建
+               3. 组件创建完成之后, 判断组件是否需要增强(针对通知方法), 将通知方法包装成增强器(Advisor), 给业务组件创建一个代理对象(cglib)
+            3. 执行目标方法
+               1. 容器获取代理对象并执行目标方法
+               2. CglibAopProxy.intercept()
+                  1. 得到目标方法连接器链(增强器包装成MetodInterceptor)
+                  2. 利用连接器的链式机制, 依次执行拦截器
+                  3. 效果
+                     1. 正常执行：前置通知--》目标方法--》后置通知--》返回通知
+                     2. 出现异常：前置通知--》目标方法--》后置通知--》异常通知
+
+## 声明式事务
+
+### 代码
+
+```java
+package com.yangyun.tx;
+
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.beans.PropertyVetoException;
+
+/**
+ * @ClassName MainConfigTx
+ * @Description: 声明式事务
+ * @Author 86155
+ * @Date 2020/1/21 20:56
+ * @Version 1.0
+ **/
+@EnableTransactionManagement
+@ComponentScan("com.yangyun.tx")
+@Configuration
+public class MainConfigTx {
+
+    @Bean
+    public DataSource dataSource () throws PropertyVetoException {
+        ComboPooledDataSource dataSource = new ComboPooledDataSource();
+        dataSource.setUser("root");
+        dataSource.setPassword("123456");
+        dataSource.setDriverClass("com.mysql.jdbc.Driver");
+        dataSource.setJdbcUrl("jdbc:mysql://47.107.172.70:3305/test");
+        return dataSource;
+    }
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        return jdbcTemplate;
+    }
+
+    // 注册事务管理器
+    @Bean
+    public PlatformTransactionManager transactionManager(DataSource dataSource){
+        // 事务管理器处理需要管理的数据源
+        DataSourceTransactionManager dataSourceTransactionManager = new DataSourceTransactionManager(dataSource);
+        return dataSourceTransactionManager;
+    }
+}
+
+```
+
+```java
+package com.yangyun.tx;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+/**
+ * @ClassName UserDao
+ * @Description:
+ * @Author 86155
+ * @Date 2020/1/21 21:02
+ * @Version 1.0
+ **/
+@Repository
+public class UserDao {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    public void insertUser(User user){
+        String sql = "insert into tbl_user(username, age) values(?, ?)";
+        jdbcTemplate.update(sql, user.getUserName(), user.getAge());
+    }
+}
+
+```
+
+```java
+package com.yangyun.tx;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @ClassName UserService
+ * @Description:
+ * @Author 86155
+ * @Date 2020/1/21 21:02
+ * @Version 1.0
+ **/
+@Service
+public class UserService {
+
+    @Autowired
+    private UserDao userDao;
+
+    @Transactional
+    public void insertUser(User user){
+        userDao.insertUser(user);
+        System.out.println("新增成功...");
+//        int a = 10/0;
+    }
+}
+
+```
+
+```java
+package com.yangyun.test;
+
+import com.yangyun.tx.MainConfigTx;
+import com.yangyun.tx.User;
+import com.yangyun.tx.UserService;
+import org.junit.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+import java.util.UUID;
+
+/**
+ * @ClassName TxTest
+ * @Description:
+ * @Author 86155
+ * @Date 2020/1/21 21:37
+ * @Version 1.0
+ **/
+public class TxTest {
+
+    @Test
+    public void test(){
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(MainConfigTx.class);
+        UserService userService = context.getBean(UserService.class);
+
+        User user = new User();
+        user.setUserName(UUID.randomUUID().toString().substring(0, 5)).setAge(15);
+
+        userService.insertUser(user);
+    }
+}
+```
+
+### 原理
+
+1. @EnableTransactionManagement 开启声明式事务
+
+   通过 @EnableTransactionManagement 往容器中导入 @Import(TransactionManagementConfigurationSelector.class) 组件
+
+2. ```java
+   public class TransactionManagementConfigurationSelector extends 
+   AdviceModeImportSelector<EnableTransactionManagement> {
+       // 导入需要组件 EnableTransactionManagement
+   	protected String[] selectImports(AdviceMode adviceMode) {
+   		switch (adviceMode) {
+   			case PROXY:
+   				return new String[] {AutoProxyRegistrar.class.getName(),
+   						ProxyTransactionManagementConfiguration.class.getName()};
+   			case ASPECTJ:
+   				return new String[] {determineTransactionAspectClass()};
+   			default:
+   				return null;
+   		}
+   	}
+   }
+   // EnableTransactionManagement 默认使用的就是 AdviceMode.PROXY
+   public @interface EnableTransactionManagement {
+       // true: 指定是否创建基于子类的(cglib)代理
+       // false: 基于标准的java接口的代理
+       // 并且默认值只有哦在AdviceMode.PROXY 才适用
+       boolean proxyTargetClass() default false;
+       AdviceMode mode() default AdviceMode.PROXY;
+   }
+   ```
+
+3. AutoProxyRegistrar 自动代理注册, 根据给定的配置注册信息, 注册 InfrastructureAdvisorAutoProxyCreator
+
+   InfrastructureAdvisorAutoProxyCreator --> AbstractAdvisorAutoProxyCreator --> AbstractAutoProxyCreator --> SmartInstantiationAwareBeanPostProcessor;
+
+   可以知道 InfrastructureAdvisorAutoProxyCreator 属于一个后置处理器
+
+   ```java
+   public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+   	boolean candidateFound = false;
+       // 获取配置类上注解信息
+       Set<String> annoTypes = importingClassMetadata.getAnnotationTypes();
+       for (String annoType : annoTypes) {
+           // 获取注解中属性信息
+           AnnotationAttributes candidate = 
+               AnnotationConfigUtils.attributesFor(importingClassMetadata, annoType);
+           if (candidate == null) {
+               continue;
+           }
+           Object mode = candidate.get("mode");
+           Object proxyTargetClass = candidate.get("proxyTargetClass");
+           if (mode != null && proxyTargetClass != null && AdviceMode.class == 
+               mode.getClass() && Boolean.class == proxyTargetClass.getClass()) {
+               candidateFound = true;
+               if (mode == AdviceMode.PROXY) {
+                   // 注册自动代理创建者 
+                   // @EnableTransactionManagement 的作用 			
+                   // ①InfrastructureAdvisorAutoProxyCreator 
+                   AopConfigUtils.registerAutoProxyCreatorIfNecessary(registry);
+                   if ((Boolean) proxyTargetClass) {
+   					AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
+                       return;
+                   }
+               }
+           }
+       }
+   }
+   ```
+
+   InfrastructureAdvisorAutoProxyCreator后置处理器, 在bean 创建前后执行
+
+   此处逻辑可以参考[Spring Aop 流程](https://blog.csdn.net/yangyun901222/article/details/104065485)
+
+   ```java
+   public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
+       Object cacheKey = getCacheKey(beanClass, beanName);
+   
+       if (!StringUtils.hasLength(beanName) || 
+           !this.targetSourcedBeans.contains(beanName)) {
+           if (this.advisedBeans.containsKey(cacheKey)) {
+               return null;
+           }
+           if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
+               this.advisedBeans.put(cacheKey, Boolean.FALSE);
+               return null;
+           }
+       }
+   
+       TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
+       if (targetSource != null) {
+           if (StringUtils.hasLength(beanName)) {
+               this.targetSourcedBeans.add(beanName);
+           }
+           Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, 
+                          				    beanName, targetSource);
+           Object proxy = createProxy(beanClass, beanName, specificInterceptors, 
+                                      targetSource);
+           this.proxyTypes.put(cacheKey, proxy.getClass());
+           return proxy;
+       }
+       return null;
+   }
+   
+   public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
+       if (bean != null) {
+           Object cacheKey = getCacheKey(bean.getClass(), beanName);
+           if (this.earlyProxyReferences.remove(cacheKey) != bean) {
+               return wrapIfNecessary(bean, beanName, cacheKey);
+           }
+       }
+       return bean;
+   }
+   ```
+
+4. ProxyTransactionManagementConfiguration spring事务管理器
+
+   ```java
+   @Configuration
+   public class ProxyTransactionManagementConfiguration extends AbstractTransactionManagementConfiguration {
+   	@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
+   	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+   	public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor() {
+   		BeanFactoryTransactionAttributeSourceAdvisor advisor = new 
+               BeanFactoryTransactionAttributeSourceAdvisor();
+   		advisor.setTransactionAttributeSource(transactionAttributeSource());
+   		advisor.setAdvice(transactionInterceptor());
+   		if (this.enableTx != null) {
+   			advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
+   		}
+   		return advisor;
+   	}
+       
+       @Bean
+   	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+   	public TransactionAttributeSource transactionAttributeSource() {
+   		return new AnnotationTransactionAttributeSource();
+   	}
+       
+       @Bean
+   	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+   	public TransactionInterceptor transactionInterceptor() {
+   		TransactionInterceptor interceptor = new TransactionInterceptor();
+   		interceptor.setTransactionAttributeSource(transactionAttributeSource());
+   		if (this.txManager != null) {
+   			interceptor.setTransactionManager(this.txManager);
+   		}
+   		return interceptor;
+   	}
+   }
+   ```
+
+   
+
+   ####作用
+
+   1. 添加组件 BeanFactoryTransactionAttributeSourceAdvisor	 事务增强器, 解析事务注解
+
+   2. TransactionInterceptor(MethodInterceptor) 事务拦截器; 保存了事务属性信息, 事务管理器
+
+      目标方法执行后
+
+      1. 执行拦截器链
+
+      2. 执行事务拦截器 invoke()
+
+         1. 获取事务相关属性; @Transactional() 中属性
+         2. 获取事务管理器 PlatformTransactionManager
+         3. 
+            1. 正常: 提交事务
+            2. 异常: 回滚事务
+
+         4. 执行标注了 @Transactional 注解的方法
+
+      ```java
+      public class TransactionInterceptor extends TransactionAspectSupport implements MethodInterceptor, Serializable {
+      		public TransactionInterceptor(PlatformTransactionManager ptm, Properties 
+                                            attributes) {
+      		setTransactionManager(ptm);
+      		setTransactionAttributes(attributes);
+      	}
+          public Object invoke(MethodInvocation invocation) throws Throwable {
+      		Class<?> targetClass = (invocation.getThis() != null ? 
+                                 AopUtils.getTargetClass(invocation.getThis()) : null);
+              // 在目标方法执行后调用
+      		return invokeWithinTransaction(invocation.getMethod(), targetClass, 
+                                             invocation::proceed);
+      	}
+          
+          protected Object invokeWithinTransaction(Method method, @Nullable Class<?> 
+          	targetClass,final InvocationCallback invocation) throws Throwable {
+      
+      		// 获取去事务属性
+      		TransactionAttributeSource tas = getTransactionAttributeSource();
+      		final TransactionAttribute txAttr = (tas != null ? 
+              	tas.getTransactionAttribute(method, targetClass) : null);
+              // 事务管理器
+      		final PlatformTransactionManager tm = determineTransactionManager(txAttr);
+              // 事务管理器名称, 如果指定了名称, 就根据指定名称获取;
+              // 如果没有指定事务管理名称, 就从容器中获取一个事务管理器; 
+              // 所以在配置类中我们进行了事务管理的注入
+      		final String joinpointIdentification = methodIdentification(method, 
+                                                     targetClass, txAttr);
+      		if (txAttr == null || !(tm instanceof
+                	CallbackPreferringPlatformTransactionManager)) {
+                  // 创建事务
+                  TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, 
+                                           joinpointIdentification);
+      			Object retVal;
+      			try {
+      				// This is an around advice: Invoke the next interceptor in the 
+                      // chain. 调用拦截器链
+      				retVal = invocation.proceedWithInvocation();
+      			}
+      			catch (Throwable ex) {
+      				// target invocation exception
+                      // 如果一场, 事务回滚
+      				completeTransactionAfterThrowing(txInfo, ex);
+      				throw ex;
+      			}
+      			finally {
+                      // 最后清除缓存信息
+      				cleanupTransactionInfo(txInfo);
+      			}
+                  // 一切正常, 提交事务
+      			commitTransactionAfterReturning(txInfo);
+      			return retVal;
+      		}
+      		else {
+      			final ThrowableHolder throwableHolder = new ThrowableHolder();
+      			try {
+      				Object result = ((CallbackPreferringPlatformTransactionManager) 
+                      	tm).execute(txAttr, status -> {TransactionInfo txInfo = 
+                          	prepareTransactionInfo(tm, txAttr, 
+      						joinpointIdentification, status);
+      					try {
+      						return invocation.proceedWithInvocation();
+      					}
+      					catch (Throwable ex) {
+      						if (txAttr.rollbackOn(ex)) {
+      							// A RuntimeException: will lead to a rollback.
+      							if (ex instanceof RuntimeException) {
+      								throw (RuntimeException) ex;
+      							}
+      							else {
+      								throw new ThrowableHolderException(ex);
+      							}
+      						}
+      						else {
+      							// A normal return value: will lead to a commit.
+      							throwableHolder.throwable = ex;
+      							return null;
+      						}
+      					}
+      					finally {
+      						cleanupTransactionInfo(txInfo);
+      					}
+      				});
+      
+      				// Check result state: It might indicate a Throwable to rethrow.
+      				if (throwableHolder.throwable != null) {
+      					throw throwableHolder.throwable;
+      				}
+      				return result;
+      			}
+      			catch (ThrowableHolderException ex) {
+      				throw ex.getCause();
+      			}
+      			catch (TransactionSystemException ex2) {
+      				if (throwableHolder.throwable != null) {
+      					logger.error("Application exception overridden by commit exception", throwableHolder.throwable);
+      					ex2.initApplicationException(throwableHolder.throwable);
+      				}
+      				throw ex2;
+      			}
+      			catch (Throwable ex2) {
+      				if (throwableHolder.throwable != null) {
+      					logger.error("Application exception overridden by commit exception", throwableHolder.throwable);
+      				}
+      				throw ex2;
+      			}
+      		}
+      	}
+      }
+      ```
+
+      
+
+## Spring 容器创建
 
