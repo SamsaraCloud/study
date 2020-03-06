@@ -26,7 +26,6 @@ public class BlockingQueueDemo {
         arry.add("bbb");
         arry.add("ccc");
         arry.add("ddd");
-        arry.add("eee");
 //        arry.put("");
         Iterator<String> before = arry.iterator();
 

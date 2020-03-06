@@ -12,6 +12,7 @@ public class CASDemo {
     public static void main(String[] args) {
         AtomicInteger atomicInteger = new AtomicInteger(5);
 
+
 //        boolean b = atomicInteger.compareAndSet(6, 1016);
 //        System.out.println(b + " current data: " + atomicInteger.get());
 //

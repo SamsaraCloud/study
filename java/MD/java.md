@@ -950,7 +950,7 @@ BlockQueue: 不需要关心线程的阻塞和唤醒, 基于 **ReentrantLock**, �
 
 #####ArrayBlockingQueue
 
-基于数组固定容量FIFO的有界队列, 队列的头部是在队列中存在时间最长的元素, 队列尾部是在队列中存在时间最短的元素, 新元素添加到队列尾部, 队列获取元素是从头部开始 
+基于数组**固定容量**FIFO的有界队列, 队列的头部是在队列中存在时间最长的元素, 队列尾部是在队列中存在时间最短的元素, 新元素添加到队列尾部, 队列获取元素是从头部开始 
 
 固定容量, 默认 FIFO
 
@@ -1079,6 +1079,10 @@ poll 和 offer 方法对应, take 和 put 方法对应
 
 remove 最终调用的是 poll 方法
 
+###### poll(long, TimeUnit) 和 offer(long, TimeUnit)
+
+会对传入的时间处理, 然后循环, 如果时间到了还没结果, 那么 poll 返货 null, offer 返回false
+
 ######ArrayBlockingQueue.iterator()
 
 ```java
@@ -1172,6 +1176,453 @@ Itr() {
   }
 }
 ```
+
+#####但是链表结构, 元素之间都是相互引用, 新旧元素相互引用, 导致 GC 难以处理.
+
+##### LinkedBlockingQueue
+
+```java
+/**
+ * 基于链表结构的可选容量(FIFO)的阻塞队列, 对头是插入最久的元素, 新元素插入在队尾. 
+ * 初始容量可选, 默认 Integer.MAX_AVALUE
+ */
+public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements BlockingQueue<E>, java.io.Serializable {
+  	public LinkedBlockingQueue() {
+        this(Integer.MAX_VALUE);
+    }
+  	// LinkedBlockingQueue 底层使用链表实现, 但是却不同于其他队列, 在于其头部元素不包含元素为空节点
+  	// 有点类似 ReentrantLock 中, 将等待的 lock 添加到等待队列中, 队列的头元素也是空节点
+  	public LinkedBlockingQueue(int capacity) {
+        if (capacity <= 0) throw new IllegalArgumentException();
+        this.capacity = capacity;
+      	// 初始头结点和为节点为空元素
+        last = head = new Node<E>(null);
+    }
+  
+    static class Node<E> {
+      	// 当前元素
+        E item;
+        Node<E> next;
+        Node(E x) { item = x; }
+    }
+  	
+  	// 元素计数
+  	private final AtomicInteger count = new AtomicInteger();
+  	
+  	/**
+  	 * 提供了插入和读取两把锁, 插入(读取)只能有一个线程操作, 但是对于插入和读取是之间是相互可见的
+  	 * 也就是说插入和读取可以同时存在
+     * 每当一个元素进入队列, putLock 获取并更新计数 count. 后续的读取器通过 putLick 或 takeLock 保证
+     * 队列节点的可见性, 然后读取 count.get() 来获取元素
+     */
+  	private final ReentrantLock takeLock = new ReentrantLock();
+  	private final Condition notEmpty = takeLock.newCondition();
+  	private final ReentrantLock putLock = new ReentrantLock();
+  	private final Condition notFull = putLock.newCondition();
+}
+```
+
+###### put、offer
+
+```java
+public void put(E e) throws InterruptedException {
+    if (e == null) throw new NullPointerException();
+    // Note: convention in all put/take/etc is to preset local var
+    // holding count negative to indicate failure unless set.
+    int c = -1;
+    Node<E> node = new Node<E>(e);
+    final ReentrantLock putLock = this.putLock;
+    final AtomicInteger count = this.count;
+    putLock.lockInterruptibly();
+    try {
+      	// 队列满, 则阻塞.在取元素的时候, 会判断队列元素个数, 唤醒此时阻塞队列
+        while (count.get() == capacity) {
+          notFull.await();
+        }
+      	// 入队列尾
+        enqueue(node);
+        // 计数加 1
+        c = count.getAndIncrement();
+       	// 在取元素时, 如果队为空也会阻塞, 此时唤醒阻塞线程
+        if (c + 1 < capacity)
+          notFull.signal();
+    } finally {
+      putLock.unlock();
+    }
+  	// 当程序执行到插入元素, 然后当好有线程读取了刚存进去的元素, 此时队列为空, 后面获取元素的线程需要阻塞
+  	if (c == 0)
+      	signalNotEmpty();
+}
+
+// 返回特殊值, 失败返回false, 成功返回 true
+public boolean offer(E e) {
+    if (e == null) throw new NullPointerException();
+    final AtomicInteger count = this.count;
+  	// 队列满直接返回 false
+    if (count.get() == capacity)
+      return false;
+    int c = -1;
+    Node<E> node = new Node<E>(e);
+    final ReentrantLock putLock = this.putLock;
+    putLock.lock();
+    try {
+      if (count.get() < capacity) {
+        enqueue(node);
+        c = count.getAndIncrement();
+        if (c + 1 < capacity)
+          notFull.signal();
+      }
+    } finally {
+      putLock.unlock();
+    }
+    if (c == 0)
+      signalNotEmpty();
+  	return c >= 0;
+}
+
+public boolean offer(E e, long timeout, TimeUnit unit)
+    throws InterruptedException {
+    if (e == null) throw new NullPointerException();
+  	// 队列满, 有效时间
+    long nanos = unit.toNanos(timeout);
+    int c = -1;
+    final ReentrantLock putLock = this.putLock;
+    final AtomicInteger count = this.count;
+    putLock.lockInterruptibly();
+    try {
+      while (count.get() == capacity) {
+        // 有效时间过, 返回
+        if (nanos <= 0)
+          return false;
+        // 队列满, 等待队列可以插入新元素的时间
+        nanos = notFull.awaitNanos(nanos);
+      }
+      enqueue(new Node<E>(e));
+      c = count.getAndIncrement();
+      if (c + 1 < capacity)
+        notFull.signal();
+    } finally {
+      putLock.unlock();
+    }
+  	// c 为零表示添加的第一个元素, 需要唤醒在添加元素前就取数据的线程
+    if (c == 0)
+      signalNotEmpty();
+    return true;
+}
+```
+
+###### take、poll
+
+```java
+// 成功返回对首元素, 队列为空阻塞
+public E take() throws InterruptedException {
+    E x;
+    int c = -1;
+    final AtomicInteger count = this.count;
+    final ReentrantLock takeLock = this.takeLock;
+    takeLock.lockInterruptibly();
+    try {
+      // 队列为空, 阻塞
+      while (count.get() == 0) {
+        notEmpty.await();
+      }
+      x = dequeue();
+      c = count.getAndDecrement();
+      // 当多个线程对一个空队列取元素时, 这些线程会阻塞, 当有其线程添加了多个元素时, 当第一个被阻塞的线程获取元素后, 需要唤醒在 notEmpty 条件上的下一个读取元素的线程, 没有这个操作, 可能导致后面读取元素的线程无限等待
+      if (c > 1)
+        notEmpty.signal();
+    } finally {
+      takeLock.unlock();
+    }
+  	// 队列满, 取出一个元素后, 需要唤醒在队列满添加元素时阻塞的线程
+    if (c == capacity)
+      signalNotFull();
+    return x;
+}
+// 成功返回元素, 队列为空返回null, 不阻塞
+public E poll() {
+    final AtomicInteger count = this.count;
+    if (count.get() == 0)
+      return null;
+    E x = null;
+    int c = -1;
+    final ReentrantLock takeLock = this.takeLock;
+    takeLock.lock();
+    try {
+      if (count.get() > 0) {
+        x = dequeue();
+        c = count.getAndDecrement();
+        if (c > 1)
+          notEmpty.signal();
+      }
+    } finally {
+      takeLock.unlock();
+    }
+    if (c == capacity)
+      signalNotFull();
+    return x;
+}
+```
+
+
+
+
+
+#####DelayQueue
+
+一个**无限容量**的阻塞队列, 里面的元素必须实现 **Delyed** 接口. 可以指定多久才能从队列中获取元素, 只又当 getDelay 方法返回小于或等于 0 的值时, 才能获取元素. 当未达到延期, 即使队列中有元素也无法获取
+
+**引用场景**: 1. 缓存系统 2. 定时任务调度
+
+```java
+class DelayedDemo implements Delayed {
+  	// 可以通过构造传参的方式来制定延期时间
+  	public DelayedDemo(long ... parameter){}
+	
+  	// 获取延期时间
+    @Override
+    public long getDelay(TimeUnit unit) {
+        return 0;
+    }
+
+  	// 当没有重写 Comparator 接口, 可以自定义
+  	// 默认使用的是自然排序
+    @Override
+    public int compareTo(Delayed o) {
+        return 0;
+    }
+}
+```
+
+```java
+public class DelayQueue<E extends Delayed> extends AbstractQueue<E> implements BlockingQueue<E> {
+  	// 默认使用的非公平锁
+  	private final transient ReentrantLock lock = new ReentrantLock();
+  	// 线程不安全的优先队列, 底层其实还是数组
+    private final PriorityQueue<E> q = new PriorityQueue<E>();
+  	// 采用 Leader/Followers 模式, 最小化不必要的等待时间
+  	/** DelayQueue 中 Leader/followers 模式中使用的线程其实就是每次访问队列的线程本身, 他们组成相当于一个线程池. 在这些线程中, 只有一个 leader , 其他都为 followers, 当有时间需要处理, leader 会指定一个新的 leader(调用了available.signal() 唤醒下个需要执行的线程), 自己去处理事件, 处理完事件的线程下次再次访问队列会再次成为 followers. 这种方法可以增强 CPU 高速缓存相似性, 及消除动态内存分配和线程间的数据交换
+    */
+  	private Thread leader = null;
+  	// 当一个新的元素在队列的最前面可用时，或者一个新线程需要成为leader时，就会发出条件信号。
+    private final Condition available = lock.newCondition();
+}
+```
+
+######offer
+
+add, put 方法最终还是调用的 offer
+
+offer(E e, long timeout, TimeUnit unit), 因为 DelayQueue 为**无限**容量, 所以这个方法不会阻塞, 最终也是调用的 offer 方法
+
+```java
+public boolean offer(E e) {
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+      // PriorityQueue 添加元素
+      q.offer(e);
+      // peek 是获取对头元素, 唤醒在 availabe 条件上阻塞的线程, 表示可以从队列中获取元素了
+      if (q.peek() == e) {
+        leader = null;
+        available.signal();
+      }
+      return true;
+    } finally {
+      lock.unlock();
+    }
+}
+
+public class PriorityQueue<E> extends AbstractQueue<E> implements java.io.Serializable {
+  	// 初始化容量
+	private static final int DEFAULT_INITIAL_CAPACITY = 11;
+  	// 队列被修改的次数
+  	transient int modCount = 0;
+  	// 保存
+    public boolean offer(E e) {
+        if (e == null)
+          throw new NullPointerException();
+        modCount++;
+        int i = size;
+      	// 扩容
+        if (i >= queue.length)
+          grow(i + 1);
+      	// 新增加, size + 1
+        size = i + 1;
+        if (i == 0)
+          queue[0] = e;
+        else
+          // 将新元素放在 老的 size 位置
+          siftUp(i, e);
+        return true;
+    }
+  
+  	// 添加元素, 排序
+    private void siftUp(int k, E x) {
+      	// 如果用户重写了排序规则, 使用用户排序规则
+        if (comparator != null)
+          siftUpUsingComparator(k, x);
+        else
+          // 默认使用自然排序
+          siftUpComparable(k, x);
+    }
+  
+  	private void grow(int minCapacity) {
+        int oldCapacity = queue.length;
+        // Double size if small; else grow by 50%
+      	// 大于64, 增加 50% 容量 
+        int newCapacity = oldCapacity + ((oldCapacity < 64) ?
+                                         (oldCapacity + 2) :
+                                         (oldCapacity >> 1));
+        // overflow-conscious code
+        if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
+        queue = Arrays.copyOf(queue, newCapacity);
+    }
+}
+```
+
+###### poll
+
+```java
+public E poll() {
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+      E first = q.peek();
+      // 如果队列为空, 或者没有达到延期, 返回null
+      if (first == null || first.getDelay(NANOSECONDS) > 0)
+        return null;
+      else
+        return q.poll();
+    } finally {
+      lock.unlock();
+    }
+}
+
+public E poll() {
+    if (size == 0)
+      return null;
+    int s = --size;
+    modCount++;
+    E result = (E) queue[0];
+    E x = (E) queue[s];
+    queue[s] = null;
+    if (s != 0)
+      // 重排序, 此时队尾元素位 null, 对首元素还在
+      // x 为队尾元素
+      siftDown(0, x);
+    return result;
+}
+```
+
+```java
+private void siftDownComparable(int k, E x) {
+    Comparable<? super E> key = (Comparable<? super E>)x;
+  	// 去当前多列的一半
+    int half = size >>> 1;        // loop while a non-leaf
+    while (k < half) {
+      // child = 1;
+      // 这个地方要结合添加元素时, 排序一起看, 因为 k << 1 让后是以幂的倍数递增的, 容易产生误解
+      // 在插入元素的就已经排好序
+      int child = (k << 1) + 1; // assume left child is least 
+      Object c = queue[child];
+      int right = child + 1;
+      if (right < size &&
+          // 交换下标 1 和 2 元素的位置
+          ((Comparable<? super E>) c).compareTo((E) queue[right]) > 0)
+        c = queue[child = right];
+      // key 为最后一个元素, 根据前面插入元素, key 为最大的元素, 如果c > ley 直接交换他们的位置就可以了
+      if (key.compareTo((E) c) <= 0)
+        break;
+      // k 为0, 将下标为 1 的元素放置到对首
+      queue[k] = c;
+      k = child;// k = 1
+    }
+    queue[k] = key;
+}
+```
+
+###### take
+
+```java
+// 按照 DaleyQueue 策略
+public E take() throws InterruptedException {
+    final ReentrantLock lock = this.lock;
+    lock.lockInterruptibly();
+    try {
+      	// 如此循环, 查看是否存在达到延期的元素
+        for (;;) {
+            // 队列中是否存在元素, 不存在等待
+            E first = q.peek();
+            if (first == null)
+              	available.await();
+            else {
+                // 存在元素, 判断该元素是否已经到了延期时间
+                long delay = first.getDelay(NANOSECONDS);
+                if (delay <= 0)
+                  // 到了延期时间, 取出该元素, 后面的逻辑和 poll一致, 重新排序
+                  return q.poll();
+                first = null; // don't retain ref while waiting
+                if (leader != null)
+                      available.await();
+                else {
+                    Thread thisThread = Thread.currentThread();
+                    leader = thisThread;
+                    try {
+                      available.awaitNanos(delay);
+                    } finally {
+                      if (leader == thisThread)
+                        leader = null;
+                    }
+                }
+            }
+        }
+    } finally {
+        if (leader == null && q.peek() != null)
+          	available.signal();
+        lock.unlock();
+    }
+}
+```
+
+##### LinkedBlockingDeque
+
+一个有链表组成的双向阻塞队列, 对头和和尾都可以添加和删除元素, 双向队列因为多了一个操作队列的入口, 在多线程同时入队时, 也就减少了一半的竞争, **但是链表结构, 元素之间都是相互引用, 新旧元素相互引用, 导致 GC 难以处理**.
+
+```java
+public class LinkedBlockingDeque<E> extends AbstractQueue<E> implements BlockingDeque<E>, java.io.Serializable {
+	static final class Node<E> {
+        // 如果元素 remove 时 item 为 null
+        E item;
+		// 上个元素
+        Node<E> prev;
+		// 下个元素
+        Node<E> next;
+		// item 为当前添加的元素
+        Node(E x) {
+            item = x;
+        }
+    }
+  	// 记录元素个数
+ 	private transient int count;
+  	// 队列大小
+  	private final int capacity;
+  	// 独占锁
+  	final ReentrantLock lock = new ReentrantLock();
+  	// 唤醒线程条件
+  	private final Condition notEmpty = lock.newCondition();
+  	private final Condition notFull = lock.newCondition();
+}
+```
+
+相比于其他阻塞队列，LinkedBlockingDeque多了addFirst、addLast、peekFirst、peekLast等方法，以first结尾的方法，表示插入、获取获移除双端队列的第一个元素。以last结尾的方法，表示插入、获取获移除双端队列的最后一个元素.
+
+#####LinkedTransferQueue
+
+
+
+
 
 <https://www.jianshu.com/p/7b2f1fa616c6>
 
