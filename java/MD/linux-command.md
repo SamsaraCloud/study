@@ -13,6 +13,31 @@ yum install man man-pages
 shutdown -r now
 ```
 
+### 后台运行
+
+执行命令 **&**
+
+### 新开子进程
+
+```
+/bin/bash
+```
+
+### 当前进程号
+
+```
+echo $$
+echo $$BASHPID
+```
+
+### 计算
+
+```shell
+[root@instance-np4osbdc ~]# ((num=8))
+[root@instance-np4osbdc ~]# echo $num
+8
+```
+
 
 
 ## vim
@@ -47,6 +72,16 @@ vim  任意文件
 
 shift+g
 
+### 复制行
+
+光标停留在需要复制的行按 **y**， 再按 **p** 就会复制到下一行
+
+### 删除行
+
+dd 删除当前行
+
+**ndd** n：从光标停留行向下删除的行数
+
 ## Redis
 
 ### 查看实例信息
@@ -55,9 +90,30 @@ shift+g
 /usr/local/redis/src/redis-cli -h ip(bind ip) -p 6379 -a password info replication
 ```
 
-#### 客户端访问
+### 客户端访问
 
 ```shell
 /usr/local/redis/src/redis-cli -h （如果为本机使用内网ip，如果为同一云服务不同主机使用外网ip） -p port
+```
+
+### 启动sentinel
+
+```shell
+redis-server sentinel.conf --sentinel
+```
+
+### 启动redis
+
+```shell
+## 临时redis，因为redis启动持久化文件会生成在启动目录，所以最好在一个新的目录下启动
+redis-server --port 6382
+## 启动从机
+redis-server --port 6383 --replicaof 127.0.0.1:6382
+```
+
+### redis集群关闭
+
+```shell
+pkill redis
 ```
 

@@ -346,3 +346,373 @@ bitmap 位图， 所属 string
 bitmap 位图旋转
 
 ![1581951927107](F:\git\study\java\MD\image\1581951927107.png)
+
+## Bloom Filter缓存穿透
+
+如果判断一个元素是否在一个集合中，一般会想到把这个元素保存到集合中，然后通过比较确定。链表、树、散列（哈希表，Hash Table）等等数据结构都是这种思路，存储位置要么是磁盘，要么是内存。很多时候，要么要是以时间换空间，要么以空间换时间。
+
+在响应时间要求比较严格的情况下，随着数据量的增加，如果我们使用内存，将导致内存开销越来越大，以及检索的时间越来越长，到之后内存开销大，效率低下。
+
+Bloom Filter（布隆过滤器）实际上是一个很长的二进制向量和一系列随机映射函数。
+
+二进制向量只能保存0或1
+
+随机映射函数用来计算保存的值在二进制向量中的**位置**，然后在二进制向量中对应位置置为1，多个随机映射函数计算的结果就能表示一个存在数据。
+
+二进制向量在内存中所占的内存是很小的。而且查找速度是很快的。
+
+Bloom Filter 做到了时间和空间上的便利，是因为牺牲了判断准确性和删除的便利性。
+
+对于**准确性**，每个保存到bloom中的数据，都由多个位的1来确认，也就是会存在多个不同的数据会使用同一个位上的1，也就导致可能一个不存在的数据，在bloom中是存在（如果bloom足够大，这个概率还是很小的）
+
+**删除的便利性**，因为多个不同的数据由多个位上的1来确认，而不同的数据可能使用用一个位上的1，也就导致删除一个对象会影响一个或多个对象
+
+bloom有可能出现误判，但不会漏掉判断，也就是bloom判断元素不在集合中，那肯定不在。判断元素在集合中，有一定几率判断错误。
+
+## redis集群
+
+### 命令方式
+
+```shell
+## 分别启动 6379、6380、6381 三台服务
+redis-server ./6379.conf
+## 进入客户端
+redis-cli -p 6379
+## 进行主从配置
+help slaveof
+## Make the server a replica of another instance, or promote it as master. Deprecated starting with Redis 5. Use REPLICAOF instead。在 5 以后的版本使用 REPLICAOF 
+REPLICAOF localhost port
+## 1. 第一次连接，在使用 rdb 作为持久化方式的时候，从机会先flush老的数据，然后在同步主机的数据，如果是从机宕机后再次连接会自动同步主机增量信息而不会flush老的数据
+## 2. 如果是使用 aof 作为持久化方式，在从机连接主机的时候每次都会写一个新的aof文件并同步主机数据
+```
+
+## Redis Twemproxy
+
+参考： https://github.com/twitter/twemproxy 
+
+```shell
+## 新建源码目录
+cd /usr/local/src
+mkdir -p twemproxy
+## 下载 twemproxy
+git clone https://github.com/twitter/twemproxy.git
+```
+
+如果出现错误
+
+![1583150025572](F:\git\study\java\MD\image\1583150025572.png)
+
+```shell
+## 更新
+yum update nss
+```
+
+```shell
+## 安装工具
+yum -y install automake libtool
+## 
+autoreconf -fvi
+```
+
+如果报错
+
+![1583151342650](F:\git\study\java\MD\image\1583151342650.png)
+
+```
+使用 yum 安装的软件来自系统自带的仓库，可能版本过低
+进入阿里云 https://developer.aliyun.com/mirror/
+选择 epel 模块，根据自身系统版本选择
+```
+
+![1583151620869](F:\git\study\java\MD\image\1583151620869.png)
+
+```shell
+## 仓库更新后，清除缓存
+yum clear all
+## 再次查看仓库中 autoconf 版本
+```
+
+![1583151804217](F:\git\study\java\MD\image\1583151804217.png)
+
+```
+## 进入到 twemproxy 目录
+yum -y install autoconfxxx
+## 
+autoreconfxxx -fvi
+## 
+./configur
+##
+make
+## 进入到src目录可以看到 twemproxy 的可执行程序 nutcracker
+cd src
+## 将twemproxy 的init 脚本复制 /etc/init.d 目录下
+cp scripts/nutcracker.init /etc/init.d/twemproxy
+## 
+cd /etc/init.d
+## 授权
+chmod +x twemproxy
+## 查看 twemproxy
+```
+
+![1583152572507](F:\git\study\java\MD\image\1583152572507.png)
+
+```
+## 需要在 /etc  创建目录
+mkdir -p /etc/nutcracker
+## 拷贝源码目录下 conf 中的文件到 /etc/nutcracker 中
+cp /usr/local/src/twemproxy/twemproxy/conf/* /etc/nuctracker
+```
+
+![1583152967395](F:\git\study\java\MD\image\1583152967395.png)
+
+```shell
+## 将可执行文件拷贝到 /usr/bin 目录，此时在任何目录下都可以使用 nutcracker命令了
+cp 
+## 如 service nutcraker
+## 修改配置文件，先拷贝
+cd /etc/nutcracker
+cp nutcracker.yml nutcracker.yml.bak
+## 修改配置文件
+vim nutcracker.yml
+## 删除 alpha 节点下面的代码
+## 先按 d 再按 G
+```
+
+```
+alpha:
+  listen: 127.0.0.1:22121
+  hash: fnv1a_64
+  distribution: ketama
+  auto_eject_hosts: true
+  redis: true
+  server_retry_timeout: 2000
+  server_failure_limit: 1
+  servers:
+   - 106.12.70.101:6379:1 ## 1 表示权重
+   - 127.0.0.1:6381:1
+```
+
+```shell
+## 在根目录创建 data 目录，临时启动两个redis，持久化会在当前运行的目录
+## 新建 6379和6380目录
+## 在 6379 目录
+redis-server --port 6379
+## 在6380目录
+redis-server --port 6380
+## 启动 twemproxy 
+service twemproxy start
+## 连接到 twemproxy 
+redis-cli -p 22121
+```
+
+## Redis Predixy
+
+参考：https://github.com/joyieldInc/predixy 
+
+### predixy+redis sentinel
+
+```shell
+## 下载 predixy 源码包到 /usr/local/src/predixy
+## 链接地址获取。https://github.com/joyieldInc/predixy，然后点击 releases，然后在 Assets下复制源码包链接
+wget https://github.com/joyieldInc/predixy/releases/download/1.0.5/predixy-1.0.5-bin-amd64-linux.tar.gz
+## 解压
+tar xf predixy-1.0.5-bin-amd64-linux.tar.gz
+## 进入到 predixy/predixy-1.0.5/conf 修改配置文件
+vim predixy.conf
+## 开启 bind 
+Bind 127.0.0.1:7617
+## predixy 可以继承 redis sentinel 和redis cluster，在predixy 配置文件中只能配置其中一个
+## 先使用 sentinel，开启 include sentinel
+Include sentinel.conf
+## 注释 Include try.conf
+```
+
+```shell
+## 修改 sentinel.conf
+SentinelServerPool {
+    Databases 16
+    Hash crc16
+    HashTag "{}"
+    Distribution modula
+    MasterReadPriority 60
+    StaticSlaveReadPriority 50
+    DynamicSlaveReadPriority 50
+    RefreshInterval 1
+    ServerTimeout 1
+    ServerFailureLimit 10
+    ServerRetryTimeout 1
+    KeepAlive 120
+    Sentinels { ## sentinel 地址和端口
+        + 127.0.0.1:26379
+        + 127.0.0.1:26380
+        + 127.0.0.1:26381
+    }
+    ## sentinel 监听 master
+    Group ooxx { ## ooxx xxoo 为 sentinel 中监听的主机的名称
+    }
+    Group xxoo {
+    }
+}
+```
+
+```shell
+## 新建 /test目录
+## 新建 sentinel.conf 配置文件
+vim 26379.conf
+## 内容
+port 26379
+## 监听的master
+sentinel monitor ooxx 127.0.0.1 36379 2
+sentinel monitor xxoo 127.0.0.1 46379 2
+## 复制 26380 和 26381
+cp 26379.conf 26380.conf
+cp 26379.conf 26381.conf
+## 修改26380和26381 中 port
+```
+
+```shell
+## 启动 sentinel
+redis-server 26379.conf --sentinel
+redis-server 26380.conf --sentinel
+redis-server 26381.conf --sentinel
+```
+
+```shell
+## 启动 redis master 36379、46379 slave 36380、46380
+## 在 /test 下新建 36379/36380/46379/46380
+mkdir -p 36379
+## 进入各自目录启动redis
+## /test/36379 master
+redis-server --port 36379
+## /test/36380 slave
+redis-server --port 36380 --replicaof 127.0.0.1 36379
+## /test/46379 master
+redis-server --port 46379
+## /test/46380 slave
+redis-server --port 46380 --replicaof 127.0.0.1 46380
+```
+
+```shell
+## 启动 predixy，进入到bin目录
+./predixy ../conf/predixy.coonf
+```
+
+```shell
+## 连接 predixy
+redis-cli -p 7617
+set k1 kdfjla
+set k2 skdfjl
+## 也可以根据 master名称来指定存到哪个redis
+set {ooxx}k3 value
+```
+
+```
+## 连接 redis，查看存入的key
+redis-cli -p 36379
+```
+
+### redis cluster
+
+redis cluster 共有  16384  槽位，每个 key 通过 CRC16 算法校验后对 16384   取模决定放置哪个槽位。
+
+```shell
+## 在 redis 源码目录下 utils 目录下的 create-cluster 目录中有一个可供使用的脚本用来创建redis cluster，根据查看 README，如果需要创建 redis cluster
+## 修改脚本 create-cluster
+# Settings
+NODES=6 ## 总共有多少个 redis 节点
+REPLICAS=1 ## 副本有多少，这样表示 6 个redis 节点，3主3备
+## 执行命令创建实例
+./create-cluster start
+```
+
+![1583241041803](F:\git\study\java\MD\image\1583241041803.png)
+
+```
+## 执行命令创建集群
+./create-cluster create
+```
+
+![1583241340704](F:\git\study\java\MD\image\1583241340704.png)
+
+```
+## 访问redis 节点
+redis-cli -c -p 30001
+```
+
+```
+可以看到，会先通过CRC16计算 key 所在槽位，然后切换，在存入，取数据也是如此
+```
+
+![1583241718277](F:\git\study\java\MD\image\1583241718277.png)
+
+```
+## 可以通过运行下面命令停止集群
+./create-cluster stop
+## 在启动的时候会自动创建每个节点对应的aof 文件，运行下面命令清除
+./create-cluster clean
+```
+
+```shell
+## 自定义启动集群
+## 首先启动redis，最少需要修改如下配置
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 5000
+appendonly yes
+## 分别启动 6379/6380/6381/6382/6383/6384
+## redis 客户端连接端口为 6379/6380/6381/6382/6383/6384，这些端口需要开放，开启了cluster 模式后，每个redis 都会有一个集群总线端口，为客户端访问端口—+10000，这些端口也需要开放，不然在创建集群的时候会报错
+## Waiting for the cluster to join 一直等待
+## 自定义创建集群最少需要6node，3个master
+```
+
+![1583302881489](F:\git\study\java\MD\image\1583302881489.png)
+
+```shell
+## 启动
+redis-cli --cluster create ip:port ... ip:port 
+## 集群访问
+redis-cli -c -h ip -p port 
+## 存入数据的时候回根据 CRC16 计算key的槽位然后再保存到对应的redis
+## 更多请参考 redis.cn 官方网站。如：故障自动转移，手动转移，重新分片，添加（主/cong）节点，删除（主/从）节点。
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# predixy
+
+ https://blog.csdn.net/rebaic/article/details/76384028 
+
+ https://github.com/joyieldInc/predixy 
+
+# twemproxy
+
+ https://github.com/twitter/twemproxy 
+

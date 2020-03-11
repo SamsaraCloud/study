@@ -27,4 +27,14 @@ public class TxTest {
 
         userService.insertUser(user);
     }
+
+    @Test
+    public void testStringConvertBinary(){
+        String s = "A";
+        String result  = "";
+        for (int i= 0; i< s.toCharArray().length; i++){
+            result += Integer.toBinaryString(s.toCharArray()[i]) + "";
+        }
+        System.out.println(result);
+    }
 }
