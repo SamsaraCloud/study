@@ -107,11 +107,11 @@ public class BeanConfiCycle {
      * 构造对象
      *		单实例: 在容器启动的时候加载实例,初始化实例到容器中, 容器关闭的时候销毁实例
      *		多实例: 容器只会在使用实例的时候才创建并初始化实例, 并且关闭容器的, 并不会调用销毁方法
-     * 2. 通过 bean 实现 InitializingBean 这个借口, 重写 afterPropertiesSet 它会在设值完所有属
+     * 2. 通过 bean 实现 InitializingBean 这个接口, 重写 afterPropertiesSet 它会在设值完所有属
      * 	  后调用
      *    通过实现 DisposableBean 完成销毁方法
      * 3. 通过 JSR250 规范提供的 @PostConstruct 和 @PreDestroy 注解
-     *		@PostConstruct: 在午餐构造方法调用完成后调用
+     *		@PostConstruct: 在无参构造方法调用完成后调用
      *		@PreDestroy: 在容器销毁后调用
      * 4. BeanPostProcessor: bean 前后置处理器
      *		postProcessBeforeInitialization: 在初始化实例之前调用
@@ -334,9 +334,7 @@ public class MainAopConfig {
 3. registerBeanPostProcessors(beanFactory); 在所有应用bean创建之前实例化并注册BeanPostProcessor
 
    1. ```java
-      public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
-      		return doGetBean(name, requiredType, null, false);
-      	}public static void registerBeanPostProcessors(
+      public static void registerBeanPostProcessors(
       	ConfigurableListableBeanFactory beanFactory, AbstractApplicationContext applicationContext) {
           // 获取ioc容器已经定义了的需要创建对象的 BeanPostProcessor
       	String[] postProcessorNames = 
@@ -354,11 +352,10 @@ public class MainAopConfig {
           // 然后注册所有常规的 BeanPostProcessor
           registerBeanPostProcessors(beanFactory, nonOrderedPostProcessors);
       }
-      
       public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
           return doGetBean(name, requiredType, null, false);
       }
-      
+
       protected <T> T doGetBean(final String name, 
       	@Nullable final Class<T> requiredType,
           @Nullable final Object[] args, boolean typeCheckOnly) throws BeansException {
@@ -383,13 +380,13 @@ public class MainAopConfig {
               bean = getObjectForBeanInstance(sharedInstance, name,beanName, mbd);
           }
       }
-      
+
       protected Object createBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) throws BeanCreationException {
           // 执行创建
       	Object beanInstance = doCreateBean(beanName, mbdToUse, args);
           return beanInstance;
       }
-      
+
       protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args) throws BeanCreationException {
       	BeanWrapper instanceWrapper = null;
           // 如果是 singleton 移除(其实就更新, 后面会重新添加到容器)
@@ -411,7 +408,7 @@ public class MainAopConfig {
               exposedObject = initializeBean(beanName, exposedObject, mbd);
           }
       }
-      
+
       protected Object initializeBean(final String beanName, final Object bean, @Nullable RootBeanDefinition mbd) {
           /**
            * 判断bean是否为 Aware 接口的实现, 如果是会执行 Aware 接口方法的回调
@@ -559,11 +556,11 @@ public class MainAopConfig {
          ![image/aop.jpg](F:\git\study\java\MD\image\aop.jpg)
 
    2. 在每个 Bean 创建之后， 调用 postProcessAfterInitialization()
-   
+
       ```java
       // 包装bean 如果需要的情况
       return wrapIfNecessary(bean, beanName, cacheKey);
-      
+
       protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
           if (StringUtils.hasLength(beanName) && 
               this.targetSourcedBeans.contains(beanName)) {
@@ -592,11 +589,11 @@ public class MainAopConfig {
               this.proxyTypes.put(cacheKey, proxy.getClass());
               return proxy;
           }
-      
+
           this.advisedBeans.put(cacheKey, Boolean.FALSE);
           return bean;
       }
-      
+
       protected Object createProxy(Class<?> beanClass, @Nullable String beanName,
       	@Nullable Object[] specificInterceptors, TargetSource targetSource) {
           // 创建代理工厂
@@ -608,7 +605,7 @@ public class MainAopConfig {
           // 获取代理对象
           return proxyFactory.getProxy(getProxyClassLoader());
       }
-      
+
       public Object getProxy(@Nullable ClassLoader classLoader) {
           return createAopProxy().getProxy(classLoader);
       }
@@ -619,7 +616,7 @@ public class MainAopConfig {
           }
           return getAopProxyFactory().createAopProxy(this);
       }
-      
+
       // 创建aop 代理; spring自动根据匹配动态创建
       public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
           if (config.isOptimize() || config.isProxyTargetClass() || 
@@ -645,20 +642,20 @@ public class MainAopConfig {
       // 候, 代理对象就执行通知方法流程
       return wrapIfNecessary(bean, beanName, cacheKey);                                         
       ```
-   
+
    3. 目标方法执行
-   
+
       容器中保存了组件的代理对象(cglib 增强后的对象), 这个对象里面保存了详细信息(如: 增强器, 目标对象..)
-   
+
       1. ```java
          // 容器返回的为代理对象
          CalculateService bean = context.getBean(CalculateService.class);
          // 执行目标方法
          bean.div(1, 1);
          ```
-   
+
       2. 执行目标方法之前会先进入 
-   
+
          ```java
          CglibAopProxy.intercept()// 拦截目标方法的执行
          public Object intercept(Object proxy, Method method, Object[] args, MethodProxy 
@@ -679,10 +676,10 @@ public class MainAopConfig {
                  retVal = new CglibMethodInvocation(proxy, target, method, args, 
                           	targetClass, chain, methodProxy).proceed();
              }
-         
+
          }
          ```
-   
+
          ```java
          // 2.1 拦截器链获取, 先从缓存中获取, 如果没有会使用 AdvisorChainFactory 根据 
          // ProxyFactory 来获取并缓存
@@ -713,7 +710,7 @@ public class MainAopConfig {
              }
              return interceptorList;
          }
-         
+
          public MethodInterceptor[] getInterceptors(Advisor advisor) throws 
              UnknownAdviceTypeException {
              List<MethodInterceptor> interceptors = new ArrayList<>(3);
@@ -736,29 +733,29 @@ public class MainAopConfig {
              return interceptors.toArray(new MethodInterceptor[0]);
          }
          ```
-   
+
          ![](F:\git\study\java\MD\image\1579504152(1).jpg)
-   
+
       3. 拦截器链的执行
-   
+
          连接器链(将通知方法包装成增强器, 然后在执行目标方法的时候再包装成连接器<MethodInterceptor>)
-   
+
          ![](F:\git\study\java\MD\image\1579576200(1).png)
-   
+
          ① ExposeInvocationInterceptor(ExposeInvocationInterceptor): 默认拦截器
-   
+
          ② com.yangyun.aop.LogAspect.logThrowing(AspectJAfterThrowingAdvice)
-   
+
          ③ com.yangyun.aop.LogAspect.logReturning(AspectJAfterReturningAdvice)
-   
+
          ④ com.yangyun.aop.LogAspect.logEnd(AspectJAfterAdvice)
-   
+
          ⑤ com.yangyun.aop.LogAspect.logStart(AspectJMethodBeforeAdvice) 
-   
+
          ​     <MethodBeforeAdviceInterceptor>
-   
+
          ![](F:\git\study\java\MD\image\1579577594(1).jpg)
-   
+
          ```java
          // CglibMethodInvocation..proceed(); 循环调用
          public Object proceed() throws Throwable {
@@ -798,7 +795,7 @@ public class MainAopConfig {
          // 从共享变量中获取
          private static final ThreadLocal<MethodInvocation> invocation =
              new NamedThreadLocal<>("Current AOP method invocation");
-         
+
          public Object invoke(MethodInvocation mi) throws Throwable {
              MethodInvocation oldInvocation = invocation.get();
              invocation.set(mi);
@@ -809,7 +806,7 @@ public class MainAopConfig {
                  invocation.set(oldInvocation);
              }
          }
-         
+
          // 第二个执行 AspectJAfterThrowingAdvice
          public Object invoke(MethodInvocation mi) throws Throwable {
              try {
@@ -822,7 +819,7 @@ public class MainAopConfig {
                  throw ex;
              }
          }
-         
+
          // 第三个执行 AspectJAfterReturningAdvice
          public Object invoke(MethodInvocation mi) throws Throwable {
              Object retVal = mi.proceed();
@@ -830,7 +827,7 @@ public class MainAopConfig {
              	mi.getThis());
              return retVal;
          }
-         
+
          // 第四个 AspectJAfterAdvice
          public Object invoke(MethodInvocation mi) throws Throwable {
              try {
@@ -840,20 +837,20 @@ public class MainAopConfig {
                  invokeAdviceMethod(getJoinPointMatch(), null, null);
              }
          }
-         
+
          // 第五个 AspectJMethodBeforeAdvice --> MethodBeforeAdviceInterceptor
          public Object invoke(MethodInvocation mi) throws Throwable {
              this.advice.before(mi.getMethod(), mi.getArguments(), mi.getThis());
              return mi.proceed();
          }
-         
+
          // 所有拦截器执行完 currentInterceptorIndex = 4
          if (this.currentInterceptorIndex == 
              this.interceptorsAndDynamicMethodMatchers.size() - 1) {
              // 执行该方法
              return invokeJoinpoint();
          }
-         
+
          protected Object invokeJoinpoint() throws Throwable {
              if (this.methodProxy != null) {
                  return this.methodProxy.invoke(this.target, this.arguments);
@@ -863,11 +860,11 @@ public class MainAopConfig {
              }
          }
          ```
-   
+
          ![](F:\git\study\java\MD\image\1579588470(1).png)
-   
+
          #### 小总结
-   
+
          1. @EnableAspectJAutoProxy 开启AOP 功能
          2. @EnableAspectJAutoProxy 会给容器注册组件 AnnotationAwareAspectJAutoProxyCreator 后置处理器
          3. 容器创建
@@ -1112,7 +1109,7 @@ public class TxTest {
    ```java
    public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
        Object cacheKey = getCacheKey(beanClass, beanName);
-   
+
        if (!StringUtils.hasLength(beanName) || 
            !this.targetSourcedBeans.contains(beanName)) {
            if (this.advisedBeans.containsKey(cacheKey)) {
@@ -1123,7 +1120,7 @@ public class TxTest {
                return null;
            }
        }
-   
+
        TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
        if (targetSource != null) {
            if (StringUtils.hasLength(beanName)) {
@@ -1138,7 +1135,7 @@ public class TxTest {
        }
        return null;
    }
-   
+
    public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
        if (bean != null) {
            Object cacheKey = getCacheKey(bean.getClass(), beanName);
@@ -1187,7 +1184,6 @@ public class TxTest {
    }
    ```
 
-   
 
    ####作用
 
@@ -1226,7 +1222,7 @@ public class TxTest {
           
           protected Object invokeWithinTransaction(Method method, @Nullable Class<?> 
           	targetClass,final InvocationCallback invocation) throws Throwable {
-      
+
       		// 获取去事务属性
       		TransactionAttributeSource tas = getTransactionAttributeSource();
       		final TransactionAttribute txAttr = (tas != null ? 
@@ -1293,7 +1289,7 @@ public class TxTest {
       						cleanupTransactionInfo(txInfo);
       					}
       				});
-      
+
       				// Check result state: It might indicate a Throwable to rethrow.
       				if (throwableHolder.throwable != null) {
       					throw throwableHolder.throwable;
@@ -1321,7 +1317,6 @@ public class TxTest {
       }
       ```
 
-      
 
 ## Spring 容器创建
 
