@@ -28,9 +28,9 @@ public class MainConfig {
      * @Param []
      * @returnm com.yangyun.bean.Person
      **/
-    @Scope(value = "prototype")
+//    @Scope(value = "prototype")
     @Bean
-    @Lazy
+//    @Lazy
     public Person person (){
         System.out.println("创建实例....");
         return new Person("张三", 25);

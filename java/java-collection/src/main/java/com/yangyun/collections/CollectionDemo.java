@@ -3,6 +3,7 @@ package com.yangyun.collections;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class CollectionDemo {
 
@@ -10,7 +11,19 @@ public class CollectionDemo {
 
     public static void main(String[] args) {
         // hashmap
-        testHashMap();
+//        testHashMap();
+        Map<Object, Object> map = Collections.synchronizedMap(new HashMap<>());
+        map.put(1, 1);
+
+        Iterator<Map.Entry<Object, Object>> iterator = map.entrySet().iterator();
+
+        while(iterator.hasNext()){
+
+        }
+
+        Hashtable<Object, Object> table = new Hashtable<>();
+//        table.put()
+
 
         // treemap
 //        String k1 = null;
