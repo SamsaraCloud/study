@@ -16,7 +16,7 @@
 
  	计算机在执行程序时, 为了提高性能, 编译器和处理器常常会**对指令做重排**, 分为三种情况
 
-![image/1.PNG](/image/1.PNG)
+![image/1.PNG](F:\git\study\java\MD\image/1.PNG)
 
 ​	单线程环境里面确保程序最终执行结果和代码顺序执行的结果一致;
 
@@ -936,7 +936,7 @@ BlockQueue: 不需要关心线程的阻塞和唤醒, 基于 **ReentrantLock**, �
 
 
 
-![image/2.PNG](/image/2.PNG)
+![image/2.PNG](F:\git\study\java\MD\image/2.PNG)
 
 线程1 往队列中存元素, 线程2 从队列中取元素;
 
@@ -944,9 +944,9 @@ BlockQueue: 不需要关心线程的阻塞和唤醒, 基于 **ReentrantLock**, �
 
 当队列中没有元素时, 线程2 **获取**元素将被阻塞直到队列中有新元素
 
-![image/3.PNG](/image/3.PNG)
+![image/3.PNG](F:\git\study\java\MD\image/3.PNG)
 
-![image/4.PNG](/image/4.PNG)
+![image/4.PNG](F:\git\study\java\MD\image/4.PNG)
 
 #####ArrayBlockingQueue
 
@@ -2301,7 +2301,7 @@ G1 (Garbage-First) 收集器, 是一款面向服务端应用的收集器
 
 ![image/gc11.PNG](image/gc11.PNG)
 
-从官网的描述中, 我们知道 G1 是一种服务端的垃圾手哦哦及其, 应用在多处理器和大容量内存环境中, 在实现高吞吐量的同时, 尽可能的满足垃圾收集暂停时间的要求, 另外, 它还具有以下特征: 
+从官网的描述中, 我们知道 G1 是一种服务端的垃圾收集器, 应用在多处理器和大容量内存环境中, 在实现高吞吐量的同时, 尽可能的满足垃圾收集暂停时间的要求, 另外, 它还具有以下特征: 
 
 ① 像 CMS 收集器一样, 能与应用程序线程并发执行
 

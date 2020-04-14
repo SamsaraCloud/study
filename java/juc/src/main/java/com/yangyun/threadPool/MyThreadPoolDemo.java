@@ -13,6 +13,7 @@ import java.util.concurrent.*;
 public class MyThreadPoolDemo {
 
     public static void main(String[] args) {
+        CountDownLatch cd = new CountDownLatch(0);
         ExecutorService threadPool = new ThreadPoolExecutor(
                 3,
                 5,

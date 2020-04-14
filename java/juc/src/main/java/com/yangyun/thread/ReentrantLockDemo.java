@@ -2,6 +2,8 @@ package com.yangyun.thread;
 
 import lombok.Getter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -78,5 +80,7 @@ class Phone {
     public synchronized void sendEmail () throws Exception{
         String name = Thread.currentThread().getName();
         System.out.println(name + "\t #######invoked sendEmail");
+        List<String> list = new ArrayList<>();
+        list.add("");
     }
 }

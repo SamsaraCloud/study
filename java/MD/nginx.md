@@ -56,6 +56,8 @@ nginx -s reload
 
 ### Nginx 配置文件
 
+[配置文件](https://github.com/SamsaraCloud/study/blob/master/java/MD/nginx.conf)
+
 ```
 
 ```

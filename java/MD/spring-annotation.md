@@ -437,7 +437,7 @@ public class MainAopConfig {
 
    ================以上是创建和注册 AnnotationAwareAspectJAutoProxyCreator ==================
 
-4. finishBeanFactoryInitialization(beanFactory); 完成BeanFactory 初始化工作, 创建剩下的单列 bean
+   1. finishBeanFactoryInitialization(beanFactory); 完成BeanFactory 初始化工作, 创建剩下的单列 bean
 
    ```java
    if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit())// 满足这些条件的单实例bean
