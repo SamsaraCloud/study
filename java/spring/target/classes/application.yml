@@ -1,0 +1,12 @@
+spring:
+  profiles:
+    active:
+    - test
+server:
+  port: 99
+ ##############\u65E5\u5FD7\u4FE1\u606F
+logging:
+#  config: classpath:log/logback-spring.xml
+##### 打印sql
+#  level:
+#    com.yangyun: debug
