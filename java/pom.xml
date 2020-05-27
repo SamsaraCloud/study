@@ -8,6 +8,8 @@
         <module>common</module>
         <module>java-collection</module>
         <module>spring-annotation</module>
+        <module>mybatis-plus</module>
+        <module>data-source</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
