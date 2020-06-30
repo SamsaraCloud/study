@@ -1,4 +1,4 @@
-package com.yangyun.designmode;
+package com.yangyun.designmode.stragtegy;
 
 /**
  * @Author yangyun

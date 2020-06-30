@@ -1,4 +1,4 @@
-package com.yangyun.designmode;
+package com.yangyun.designmode.stragtegy;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

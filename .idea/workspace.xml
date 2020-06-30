@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="21fbe4b5-543b-47ab-a589-3e199aa1db66" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/java/design-mode/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/Cat.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/CatHeightComparator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/Comparator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/Sorter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/StrategyMode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/java/pom.xml" afterDir="false" />
-    </list>
+    <list default="true" id="21fbe4b5-543b-47ab-a589-3e199aa1db66" name="Default Changelist" comment="" />
     <ignored path="$PROJECT_DIR$/java/common/target/" />
     <ignored path="$PROJECT_DIR$/java/java-collection/target/" />
     <ignored path="$PROJECT_DIR$/java/spring/target/" />
@@ -301,18 +293,6 @@
               <item name="com" type="462c0819:PsiDirectoryNode" />
               <item name="yangyun" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="study" type="b2602c69:ProjectViewProjectNode" />
-              <item name="study" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="design-mode" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="com" type="462c0819:PsiDirectoryNode" />
-              <item name="yangyun" type="462c0819:PsiDirectoryNode" />
-              <item name="designmode" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
@@ -334,7 +314,7 @@
     <property name="SearchEverywhereHistoryKey" value="Comparator&#9;FILE&#9;jar://F:/develop-tool/java/jdk1.8/src.zip!/java/util/Comparator.java&#10;comparator&#9;PSI&#9;JAVA://java.util.Comparator" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1593514046923" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1593514161606" />
     <property name="jdk.selected.JAVA_MODULE" value="1.8" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
@@ -358,11 +338,11 @@
   </component>
   <component name="RunManager" selected="Application.StrategyMode">
     <configuration name="Sorter" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.yangyun.designmode.Sorter" />
+      <option name="MAIN_CLASS_NAME" value="com.yangyun.designmode.stragtegy.Sorter" />
       <module name="designmode" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.yangyun.designmode.*" />
+          <option name="PATTERN" value="com.yangyun.designmode.stragtegy.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -371,11 +351,11 @@
       </method>
     </configuration>
     <configuration name="StrategyMode" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.yangyun.designmode.StrategyMode" />
+      <option name="MAIN_CLASS_NAME" value="com.yangyun.designmode.stragtegy.StrategyMode" />
       <module name="designmode" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.yangyun.designmode.*" />
+          <option name="PATTERN" value="com.yangyun.designmode.stragtegy.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -459,7 +439,7 @@
       <workItem from="1590587175621" duration="3021000" />
       <workItem from="1590754436741" duration="677000" />
       <workItem from="1590755941132" duration="271000" />
-      <workItem from="1593507056389" duration="3512000" />
+      <workItem from="1593507056389" duration="3627000" />
     </task>
     <servers />
   </component>
@@ -496,7 +476,7 @@
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="28928000" />
+    <option name="totallyTimeSpent" value="29043000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
@@ -512,7 +492,7 @@
       <window_info id="Web" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.329718" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.329718" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.329718" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3991323" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -522,7 +502,7 @@
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
       <window_info anchor="bottom" id="Java Enterprise" order="10" />
       <window_info anchor="bottom" id="Database Changes" order="11" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" order="12" weight="0.30802602" />
+      <window_info active="true" anchor="bottom" id="Version Control" order="12" visible="true" weight="0.30802602" />
       <window_info anchor="bottom" id="Messages" order="13" weight="0.329718" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
