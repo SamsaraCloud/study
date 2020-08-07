@@ -1,6 +1,5 @@
 package com.yangyun.utils;
 
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,5 +56,27 @@ public class StringUtil {
                 break;
             }
         }
+    }
+
+    /**
+     * 功能描述: TODO 数据库转java驼峰
+     * @Param: [s]
+     * @Return: java.lang.String
+     * @Author: yangyun
+     * @Date: 2020/8/7 14:28
+     */
+    public static String ExchangeStringB(String s) {
+        char c[] = s.toCharArray();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < c.length; i++) {
+            if (c[i] >= 65 && c[i] <= 90) {
+                c[i] = (char) (c[i] + 32);
+                sb.append("_").append(c[i]);
+            } else {
+                sb.append(c[i]);
+            }
+
+        }
+        return sb.toString();
     }
 }
