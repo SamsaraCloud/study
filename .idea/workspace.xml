@@ -1,7 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="21fbe4b5-543b-47ab-a589-3e199aa1db66" name="Default Changelist" comment="" />
+    <list default="true" id="21fbe4b5-543b-47ab-a589-3e199aa1db66" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/Main.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/aop/CalculateService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/aop/LogAspect.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/bean/BusDisposableBean.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/bean/Car.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/bean/Cat.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/bean/Person.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/conditional/MyConditional.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/config/BeanConfiCycle.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/config/MainAopConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/config/MainConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/config/MainConfigProfile.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/imports/MyImportSelector.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/tx/MainConfigTx.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/tx/User.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/tx/UserDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/classes/com/yangyun/tx/UserService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/test-classes/com/yangyun/test/Emp.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/test-classes/com/yangyun/test/IOCAOP_Test.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/test-classes/com/yangyun/test/IOCProfile_Test.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/test-classes/com/yangyun/test/IOCTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/test-classes/com/yangyun/test/JavaTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/test-classes/com/yangyun/test/Main.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/spring-annotation/target/test-classes/com/yangyun/test/TxTest.class" beforeDir="false" />
+    </list>
     <ignored path="$PROJECT_DIR$/java/common/target/" />
     <ignored path="$PROJECT_DIR$/java/java-collection/target/" />
     <ignored path="$PROJECT_DIR$/java/spring/target/" />
@@ -20,43 +45,46 @@
     <session id="-332653886">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="14" />
+          <entry key="project.closed" value="16" />
           <entry key="project.open.time.0" value="4" />
           <entry key="project.open.time.1" value="4" />
           <entry key="project.open.time.10" value="1" />
           <entry key="project.open.time.14" value="1" />
           <entry key="project.open.time.15" value="1" />
-          <entry key="project.open.time.2" value="2" />
+          <entry key="project.open.time.2" value="3" />
           <entry key="project.open.time.3" value="2" />
           <entry key="project.open.time.33" value="1" />
           <entry key="project.open.time.4" value="2" />
-          <entry key="project.opened" value="18" />
+          <entry key="project.opened" value="19" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="class" value="1" />
-          <entry key="java" value="14" />
-          <entry key="xml" value="5" />
+          <entry key="java" value="18" />
+          <entry key="pom" value="1" />
+          <entry key="xml" value="7" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="CLASS" value="1" />
-          <entry key="JAVA" value="14" />
-          <entry key="XML" value="5" />
+          <entry key="JAVA" value="18" />
+          <entry key="XML" value="8" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="java" value="849" />
-          <entry key="xml" value="86" />
+          <entry key="java" value="879" />
+          <entry key="txt" value="1" />
+          <entry key="xml" value="100" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="JAVA" value="849" />
-          <entry key="XML" value="86" />
+          <entry key="JAVA" value="879" />
+          <entry key="PLAIN_TEXT" value="1" />
+          <entry key="XML" value="100" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages">
@@ -107,7 +135,61 @@
     </session>
   </component>
   <component name="FileEditorManager">
-    <leaf />
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/java/common/src/main/java/com/yangyun/utils/StringUtil.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1875">
+              <caret line="78" column="9" selection-start-line="78" selection-start-column="9" selection-end-line="78" selection-end-column="9" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/java/pom.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="456">
+              <caret line="99" column="43" lean-forward="true" selection-start-line="99" selection-start-column="43" selection-end-line="99" selection-end-column="43" />
+            </state>
+          </provider>
+          <provider editor-type-id="MavenHelperPluginDependencyAnalyzer" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/java/spring-annotation/src/main/java/com/yangyun/tx/User.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="300">
+              <caret line="12" column="5" selection-start-line="12" selection-start-column="5" selection-end-line="12" selection-end-column="5" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/java/common/pom.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="525">
+              <caret line="21" column="10" selection-start-line="21" selection-start-column="10" selection-end-line="21" selection-end-column="10" />
+            </state>
+          </provider>
+          <provider editor-type-id="MavenHelperPluginDependencyAnalyzer" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/stragtegy/CatHeightComparator.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="225">
+              <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -130,7 +212,6 @@
         <option value="$PROJECT_DIR$/java/spring/pom.xml" />
         <option value="$PROJECT_DIR$/java/spring-annotation/src/test/java/com/yangyun/test/Main.java" />
         <option value="$PROJECT_DIR$/java/spring/src/main/java/com/yangyun/config/DuridConfig.java" />
-        <option value="$PROJECT_DIR$/java/pom.xml" />
         <option value="$PROJECT_DIR$/java/mybatis-plus/src/main/java/com/yangyun/generator/Main.java" />
         <option value="$PROJECT_DIR$/java/design-mode/pom.xml" />
         <option value="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/Comparator.java" />
@@ -139,6 +220,10 @@
         <option value="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/StrategyMode.java" />
         <option value="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/CatComparator.java" />
         <option value="$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/CatHeightComparator.java" />
+        <option value="$PROJECT_DIR$/java/common/pom.xml" />
+        <option value="$PROJECT_DIR$/java/common/src/main/java/com/yangyun/utils/StringUtil.java" />
+        <option value="$PROJECT_DIR$/java/spring-annotation/src/main/java/com/yangyun/tx/User.java" />
+        <option value="$PROJECT_DIR$/java/pom.xml" />
       </list>
     </option>
   </component>
@@ -161,6 +246,12 @@
       </MavenImportingSettings>
     </option>
   </component>
+  <component name="MavenProjectNavigator">
+    <treeState>
+      <expand />
+      <select />
+    </treeState>
+  </component>
   <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="-13" />
     <option name="y" value="42" />
@@ -172,6 +263,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -184,6 +276,69 @@
               <item name="study" type="b2602c69:ProjectViewProjectNode" />
               <item name="study" type="462c0819:PsiDirectoryNode" />
               <item name="java" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="com" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="com" type="462c0819:PsiDirectoryNode" />
+              <item name="yangyun" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="com" type="462c0819:PsiDirectoryNode" />
+              <item name="yangyun" type="462c0819:PsiDirectoryNode" />
+              <item name="utils" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="study" type="b2602c69:ProjectViewProjectNode" />
@@ -236,11 +391,35 @@
               <item name="com" type="462c0819:PsiDirectoryNode" />
               <item name="yangyun" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="design-mode" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="com" type="462c0819:PsiDirectoryNode" />
+              <item name="yangyun" type="462c0819:PsiDirectoryNode" />
+              <item name="designmode" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="study" type="b2602c69:ProjectViewProjectNode" />
+              <item name="study" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="design-mode" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="com" type="462c0819:PsiDirectoryNode" />
+              <item name="yangyun" type="462c0819:PsiDirectoryNode" />
+              <item name="designmode" type="462c0819:PsiDirectoryNode" />
+              <item name="stragtegy" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -256,15 +435,15 @@
     <property name="SearchEverywhereHistoryKey" value="Comparator&#9;FILE&#9;jar://F:/develop-tool/java/jdk1.8/src.zip!/java/util/Comparator.java&#10;comparator&#9;PSI&#9;JAVA://java.util.Comparator" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1596778659952" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1597198290462" />
     <property name="jdk.selected.JAVA_MODULE" value="1.8" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="settings.editor.selected.configurable" value="MavenSettings" />
+    <property name="settings.editor.selected.configurable" value="reference.projectsettings.compiler.javacompiler" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -383,8 +562,17 @@
       <workItem from="1590755941132" duration="271000" />
       <workItem from="1593507056389" duration="3627000" />
       <workItem from="1596765417449" duration="672000" />
-      <workItem from="1596780833152" duration="248000" />
+      <workItem from="1596780833152" duration="1963000" />
+      <workItem from="1597196335991" duration="1335000" />
     </task>
+    <task id="LOCAL-00001" summary="1">
+      <created>1596783254978</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1596783254978</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TestHistory">
@@ -420,12 +608,12 @@
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="29963000" />
+    <option name="totallyTimeSpent" value="33013000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.18923241" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1913646" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -452,7 +640,7 @@
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Palette" order="3" />
       <window_info anchor="right" id="Capture Analysis" order="4" />
-      <window_info anchor="right" id="Maven Projects" order="5" />
+      <window_info anchor="right" id="Maven Projects" order="5" weight="0.32995737" />
       <window_info anchor="right" id="Database" order="6" />
       <window_info anchor="right" id="Palette&#9;" order="7" />
       <window_info anchor="right" id="Theme Preview" order="8" />
@@ -463,8 +651,22 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
   </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ORDER">
+      <list>
+        <option value="0" />
+        <option value="2" />
+        <option value="3" />
+        <option value="1" />
+      </list>
+    </option>
+  </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="1" />
+    <option name="LAST_COMMIT_MESSAGE" value="1" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -565,18 +767,67 @@
     <entry file="file://$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/Cat.java" />
     <entry file="file://$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/CatHeightComparator.java" />
     <entry file="file://$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/StrategyMode.java" />
-    <entry file="file://$PROJECT_DIR$/java/pom.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="25">
-          <caret line="1" selection-start-line="1" selection-end-line="1" />
-        </state>
-      </provider>
-      <provider editor-type-id="MavenHelperPluginDependencyAnalyzer" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/java/design-mode/pom.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="375">
           <caret line="15" column="10" selection-start-line="15" selection-start-column="10" selection-end-line="15" selection-end-column="10" />
+        </state>
+      </provider>
+      <provider editor-type-id="MavenHelperPluginDependencyAnalyzer" />
+    </entry>
+    <entry file="file://E:/mavenRepostory/org/springframework/boot/spring-boot-dependencies/2.1.6.RELEASE/spring-boot-dependencies-2.1.6.RELEASE.pom">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="36925">
+          <caret line="1477" column="6" selection-start-line="1477" selection-start-column="6" selection-end-line="1477" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://C:/tools/dev/java/jdk1.8/src.zip!/java/util/Map.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="203">
+          <caret line="128" column="17" selection-start-line="128" selection-start-column="17" selection-end-line="128" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/java/common/src/main/java/com/yangyun/utils/StringUtil.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1875">
+          <caret line="78" column="9" selection-start-line="78" selection-start-column="9" selection-end-line="78" selection-end-column="9" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/java/common/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="525">
+          <caret line="21" column="10" selection-start-line="21" selection-start-column="10" selection-end-line="21" selection-end-column="10" />
+        </state>
+      </provider>
+      <provider editor-type-id="MavenHelperPluginDependencyAnalyzer" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/java/design-mode/src/main/java/com/yangyun/designmode/stragtegy/CatHeightComparator.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="225">
+          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/java/spring-annotation/src/main/java/com/yangyun/tx/User.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="12" column="5" selection-start-line="12" selection-start-column="5" selection-end-line="12" selection-end-column="5" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/java/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="456">
+          <caret line="99" column="43" lean-forward="true" selection-start-line="99" selection-start-column="43" selection-end-line="99" selection-end-column="43" />
         </state>
       </provider>
       <provider editor-type-id="MavenHelperPluginDependencyAnalyzer" />
@@ -598,7 +849,7 @@
       </state>
       <state key="FacetStructureConfigurable.UI">
         <settings>
-          <last-edited>Spring</last-edited>
+          <last-edited>No facets are configured</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
@@ -633,7 +884,7 @@
       </state>
       <state key="ModuleStructureConfigurable.UI">
         <settings>
-          <last-edited>designmode</last-edited>
+          <last-edited>study</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
