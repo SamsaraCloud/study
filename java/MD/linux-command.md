@@ -38,8 +38,6 @@ echo $$BASHPID
 8
 ```
 
-
-
 ## vim
 
 ### 多行注释
@@ -115,5 +113,12 @@ redis-server --port 6383 --replicaof 127.0.0.1:6382
 
 ```shell
 pkill redis
+```
+
+### vim 翻页
+
+```
+ctrl + f 下翻页
+ctrl + b 上翻页
 ```
 
